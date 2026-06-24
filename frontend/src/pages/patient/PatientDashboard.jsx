@@ -20,7 +20,7 @@ export default function PatientDashboard() {
   ];
 
   const cards = [
-    { title: 'My AI Prediction', count: 'Normal', change: '18.4% Obesity Risk', icon: FaWeightScale, color: 'from-emerald-500 to-teal-500' },
+    { title: 'My Risk Profile', count: 'Normal', change: '18.4% Obesity Risk', icon: FaWeightScale, color: 'from-emerald-500 to-teal-500' },
     { title: 'Active Meal Plan', count: 'Keto-Med', change: '2,100 kcal target', icon: FaUtensils, color: 'from-sky-500 to-cyan-500' },
     { title: 'My Progress', count: '-4.3 kg', change: 'Lost over last 3 months', icon: FaHeartPulse, color: 'from-blue-500 to-indigo-500' },
     { title: 'Appointments', count: '1 Pending', change: 'Tomorrow at 14:30', icon: FaCalendarCheck, color: 'from-purple-500 to-pink-500' }
@@ -30,17 +30,15 @@ export default function PatientDashboard() {
     <DashboardLayout role="patient" menuItems={menuItems}>
       <div className="space-y-6">
         
-        {/* Title */}
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Welcome Patient 👋
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Obesity Prediction & Diet Dashboard • Track your progress and follow meal recommendations
+            Obesity & Diet Workspace • Track your progress and follow meal recommendations
           </p>
         </div>
 
-        {/* Patient Dashboard Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card, i) => {
             const Icon = card.icon;
@@ -73,10 +71,8 @@ export default function PatientDashboard() {
           })}
         </div>
 
-        {/* Interactive Progress Tracking */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           
-          {/* Meal Details Card */}
           <div className="xl:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
             <h3 className="font-bold text-sm tracking-wide mb-6">Today's Nutrition Breakdown</h3>
             
@@ -98,7 +94,6 @@ export default function PatientDashboard() {
             </div>
           </div>
 
-          {/* Quick Doctor Info / Next Appointment */}
           <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm flex flex-col justify-between">
             <div>
               <h3 className="font-bold text-sm tracking-wide mb-6">Assigned Medical Doctor</h3>

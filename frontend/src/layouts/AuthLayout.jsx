@@ -12,7 +12,6 @@ import {
 } from 'react-icons/fa6';
 
 export default function AuthLayout({ children }) {
-  // Theme state
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('theme');
@@ -21,7 +20,6 @@ export default function AuthLayout({ children }) {
     return false;
   });
 
-  // Sync theme with HTML document class
   useEffect(() => {
     const root = window.document.documentElement;
     if (darkMode) {
@@ -36,7 +34,6 @@ export default function AuthLayout({ children }) {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden transition-colors duration-500 bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-400 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950">
       
-      {/* Interactive Floating Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <motion.div 
           animate={{
@@ -63,34 +60,28 @@ export default function AuthLayout({ children }) {
         />
       </div>
 
-      {/* Grid overlay for a high-tech/medical data visual */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:30px_30px] dark:bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] z-0" />
 
-      {/* Main Container */}
       <div className="container relative z-10 mx-auto px-4 py-8 lg:py-12 min-h-screen flex items-center justify-center">
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* ================= LEFT SECTION (50%) ================= */}
           <div className="lg:col-span-6 flex flex-col justify-center text-white space-y-6 lg:pr-6">
             
-            {/* Branding Header */}
             <div className="flex items-center space-x-3">
               <div className="p-2.5 rounded-2xl bg-white/10 dark:bg-slate-800/60 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-lg shadow-black/5 animate-pulse">
                 <FaHeartPulse className="text-2xl text-cyan-200 dark:text-cyan-400" />
               </div>
               <div>
-                <span className="text-sm font-semibold tracking-wider text-cyan-100 uppercase dark:text-cyan-400/80">AI Healthcare Labs</span>
-                <h3 className="text-xs text-white/70 font-mono tracking-widest uppercase">Obesity-Management OS</h3>
+                <span className="text-sm font-semibold tracking-wider text-cyan-100 uppercase dark:text-cyan-400/80">CarePath Diagnostics</span>
+                <h3 className="text-xs text-white/70 font-mono tracking-widest uppercase">Obesity Management Portal</h3>
               </div>
             </div>
 
-            {/* Title & Subtitle */}
             <div className="space-y-3">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-100 bg-clip-text text-transparent">
-                AI-Powered Obesity Prediction & Dietary Management
+                Obesity Risk Prediction & Dietary Management Portal
               </h1>
               
-              {/* Subtitle Badges */}
               <div className="flex flex-wrap gap-2 pt-1">
                 {['Predict', 'Monitor', 'Improve'].map((word, i) => (
                   <span 
@@ -104,10 +95,8 @@ export default function AuthLayout({ children }) {
               </div>
             </div>
 
-            {/* Interactive Visual Dashboard Demo (AI Analyzing Health Metrics) */}
             <div className="relative w-full h-[260px] md:h-[300px] rounded-3xl bg-white/5 dark:bg-slate-900/30 border border-white/10 dark:border-slate-800/40 backdrop-blur-md overflow-hidden p-6 shadow-inner">
               
-              {/* Dynamic Grid Scanner Visual */}
               <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-[scan_4s_linear_infinite]" style={{
                 animationName: 'scan'
               }} />
@@ -121,22 +110,19 @@ export default function AuthLayout({ children }) {
               `}</style>
 
               <div className="h-full flex flex-col justify-between relative z-10">
-                {/* Visual Header */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center space-x-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span className="text-xs font-mono text-cyan-200 tracking-wider">AI DIAGNOSTIC SCANNING ACTIVE</span>
+                    <span className="text-xs font-mono text-cyan-200 tracking-wider">REAL-TIME CLINICAL SCANNER ACTIVE</span>
                   </div>
                   <span className="text-xs font-mono text-white/50">PATIENT_ID: #88092-A</span>
                 </div>
 
-                {/* Floating Mockup Widgets Container */}
                 <div className="flex-1 grid grid-cols-2 gap-4 items-center relative py-4">
                   
-                  {/* Widget 1: Health Risk Meter */}
                   <motion.div className="p-4 rounded-2xl bg-white/10 dark:bg-slate-800/40 border border-white/10 shadow-lg flex flex-col justify-center animate-float-slow">
                     <div className="flex justify-between items-center text-white/60 text-[10px] uppercase font-mono tracking-wider">
-                      <span>Obesity Risk</span>
+                      <span>Metabolic Risk</span>
                       <FaWeightScale className="text-xs text-cyan-300" />
                     </div>
                     <div className="text-2xl font-black mt-1 text-cyan-200">18.4%</div>
@@ -144,7 +130,6 @@ export default function AuthLayout({ children }) {
                       <FaCheck className="mr-1 text-[8px]" /> Normal Range
                     </div>
                     
-                    {/* Tiny Progress Bar */}
                     <div className="w-full bg-white/20 dark:bg-slate-700/50 h-1 rounded-full mt-3 overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
@@ -155,23 +140,20 @@ export default function AuthLayout({ children }) {
                     </div>
                   </motion.div>
 
-                  {/* Widget 2: Meal Plan Target */}
                   <motion.div className="p-4 rounded-2xl bg-white/10 dark:bg-slate-800/40 border border-white/10 shadow-lg flex flex-col justify-center animate-float-medium">
                     <div className="flex justify-between items-center text-white/60 text-[10px] uppercase font-mono tracking-wider">
-                      <span>Active Diet</span>
+                      <span>Diet Plan</span>
                       <FaUtensils className="text-xs text-teal-300" />
                     </div>
                     <div className="text-sm font-bold mt-1 text-teal-100 truncate">Keto-Mediterranean</div>
                     <div className="text-[10px] text-teal-200 mt-1">2,100 kcal target</div>
 
-                    {/* Meal Plan Progress Bubbles */}
                     <div className="flex space-x-1.5 mt-3">
                       <span className="text-[8px] bg-teal-500/30 px-1.5 py-0.5 rounded text-teal-200 border border-teal-500/20">Prot: 90g</span>
                       <span className="text-[8px] bg-sky-500/30 px-1.5 py-0.5 rounded text-sky-200 border border-sky-500/20">Carb: 50g</span>
                     </div>
                   </motion.div>
 
-                  {/* Widget 3: BMI Analytics */}
                   <motion.div className="col-span-2 p-3.5 rounded-2xl bg-white/10 dark:bg-slate-800/40 border border-white/10 shadow-lg flex items-center justify-between animate-float-fast">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 rounded-xl bg-cyan-400/20 text-cyan-200">
@@ -182,7 +164,6 @@ export default function AuthLayout({ children }) {
                         <div className="text-sm font-semibold text-white">28.4 → 24.1 <span className="text-xs text-emerald-300 font-normal">(-15.1%)</span></div>
                       </div>
                     </div>
-                    {/* Simulated Mini Chart */}
                     <div className="flex items-end space-x-1 h-8">
                       {[15, 24, 20, 28, 22, 16, 12].map((height, i) => (
                         <div 
@@ -196,22 +177,20 @@ export default function AuthLayout({ children }) {
 
                 </div>
 
-                {/* Status Bar */}
                 <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[10px] font-mono text-white/60">
-                  <span className="flex items-center"><FaFileWaveform className="mr-1.5" /> Core Health Engine v2.4</span>
-                  <span className="text-emerald-300">Connection Secured (SSL/HIPAA)</span>
+                  <span className="flex items-center"><FaFileWaveform className="mr-1.5" /> Core Diagnostic Engine v2.4</span>
+                  <span className="text-emerald-300">HIPAA & GDPR Secure Endpoint</span>
                 </div>
 
               </div>
             </div>
 
-            {/* Feature Highlights Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                { title: "AI Obesity Prediction", desc: "Generative clinical modeling predicts risks." },
-                { title: "Personalized Meal Plans", desc: "Smart recipes tailored to metabolic profiles." },
-                { title: "Progress Tracking", desc: "Real-time calorie & active BMI trackers." },
-                { title: "Smart Appointment Scheduler", desc: "Instantly coordinate care with dieticians." }
+                { title: "Obesity Risk Prediction", desc: "Generative predictive models suggest risks." },
+                { title: "Personalized Meal Plans", desc: "Tailored nutritional guidelines." },
+                { title: "Progress Monitoring", desc: "Interactive weight and diet trackers." },
+                { title: "Appointment Management", desc: "Instantly coordinate care with dieticians." }
               ].map((feat, index) => (
                 <div key={index} className="flex items-start space-x-3 p-1">
                   <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-200 text-xs">
@@ -227,7 +206,6 @@ export default function AuthLayout({ children }) {
 
           </div>
 
-          {/* ================= RIGHT SECTION (50% - DYNAMIC CHILDREN) ================= */}
           <div className="lg:col-span-6 flex justify-center w-full relative">
             {children}
           </div>
@@ -235,7 +213,6 @@ export default function AuthLayout({ children }) {
         </div>
       </div>
 
-      {/* Floating Header Actions (Theme Toggle & HIPAA Badging) */}
       <div className="absolute top-6 right-6 flex items-center space-x-4 z-50">
         <span className="hidden md:inline-flex items-center px-3 py-1 rounded-full text-[10px] font-mono tracking-wider bg-slate-900/10 dark:bg-white/10 text-slate-900 dark:text-white border border-white/20">
           HIPAA & GDPR COMPLIANT
@@ -251,9 +228,8 @@ export default function AuthLayout({ children }) {
         </button>
       </div>
 
-      {/* Copyright Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-white/50 font-mono tracking-widest uppercase pointer-events-none z-10">
-        © 2026 AI Healthcare OS • Obesity-Prediction & Diet Portal
+        © 2026 CarePath Portal • Obesity-Prediction & Diet Management
       </div>
 
     </div>

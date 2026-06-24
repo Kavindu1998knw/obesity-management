@@ -17,7 +17,7 @@ import AuthLayout from '../layouts/AuthLayout';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [role, setRole] = useState('patient'); // patient | doctor | admin
+  const [role, setRole] = useState('patient');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,18 +26,9 @@ export default function LoginPage() {
   const [validationError, setValidationError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Set default credentials when role changes (for easy testing/mock)
   useEffect(() => {
-    if (role === 'patient') {
-      setEmail('patient@obesity-ai.com');
-      setPassword('patient123');
-    } else if (role === 'doctor') {
-      setEmail('doctor@obesity-ai.com');
-      setPassword('doctor123');
-    } else if (role === 'admin') {
-      setEmail('admin@obesity-ai.com');
-      setPassword('admin123');
-    }
+    setEmail('');
+    setPassword('');
     setValidationError('');
     setSubmitSuccess(false);
   }, [role]);
@@ -54,14 +45,12 @@ export default function LoginPage() {
     setSubmitSuccess(false);
 
     try {
-      // Connect to actual backend login endpoint
       const response = await axios.post('http://localhost:5000/api/auth/login', {
         email,
         password
       });
 
       if (response.data.success) {
-        // Save JWT token and user info to localStorage
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
@@ -87,12 +76,10 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      {/* Ambient behind-card glow */}
       <div className="absolute -inset-1 bg-gradient-to-r from-sky-400 to-teal-400 rounded-3xl blur-2xl opacity-35 dark:opacity-20 pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 backdrop-blur-xl bg-white/20 dark:bg-slate-900/45 border border-white/30 dark:border-slate-800/40 shadow-2xl rounded-3xl p-8 transition-all duration-300">
         
-        {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Welcome Back
@@ -102,7 +89,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Role Selection */}
         <div className="mb-6">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-3">
             Select Portal Role
@@ -137,10 +123,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           
-          {/* Email Address */}
           <div>
             <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-2">
               Email Address
@@ -161,7 +145,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Password */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
@@ -197,7 +180,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Remember Me */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -211,7 +193,6 @@ export default function LoginPage() {
             </label>
           </div>
 
-          {/* Validation Errors */}
           <AnimatePresence>
             {validationError && (
               <motion.div 
@@ -226,7 +207,6 @@ export default function LoginPage() {
             )}
           </AnimatePresence>
 
-          {/* Success Message Banner */}
           <AnimatePresence>
             {submitSuccess && (
               <motion.div 
@@ -237,13 +217,12 @@ export default function LoginPage() {
               >
                 <span className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px]">✓</span>
                 <div>
-                  <span className="font-bold">Authentication successful!</span> Stored token. Routing to {role} dashboard...
+                  <span className="font-bold">Authentication successful!</span> Routing to {role} dashboard...
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={isSubmitting || submitSuccess}
@@ -269,15 +248,6 @@ export default function LoginPage() {
 
         </form>
 
-        {/* Demo Credentials hint */}
-        <div className="mt-5 p-3 rounded-2xl bg-cyan-500/10 dark:bg-cyan-950/10 border border-cyan-500/20 dark:border-cyan-950/20 flex items-start space-x-2 text-[11px] text-cyan-950 dark:text-cyan-300 leading-relaxed">
-          <FaCircleInfo className="flex-shrink-0 mt-0.5 text-xs" />
-          <span>
-            <strong>Demo Login:</strong> Auto-filled credentials. Make sure you register them first in the backend, or run with local DB.
-          </span>
-        </div>
-
-        {/* Register Link */}
         <div className="mt-8 text-center border-t border-slate-900/10 dark:border-white/10 pt-6">
           <span className="text-xs text-slate-800/70 dark:text-slate-400">
             Don't have an account? 

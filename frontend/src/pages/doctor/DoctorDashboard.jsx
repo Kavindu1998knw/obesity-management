@@ -29,14 +29,13 @@ export default function DoctorDashboard() {
     <DashboardLayout role="doctor" menuItems={menuItems}>
       <div className="space-y-6">
         
-        {/* Title */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Welcome Doctor 🩺
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              AI Diagnostic Portal for Obesity & Metabolic Care • Secure Workspace
+              Clinical Workspace for Obesity & Metabolic Care • Secure Workspace
             </p>
           </div>
           <button className="self-start sm:self-auto inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-950 font-bold text-xs shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
@@ -45,7 +44,6 @@ export default function DoctorDashboard() {
           </button>
         </div>
 
-        {/* Doctor Dashboard Analytics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card, i) => {
             const Icon = card.icon;
@@ -78,13 +76,11 @@ export default function DoctorDashboard() {
           })}
         </div>
 
-        {/* Patients & Predictions Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           
-          {/* Recent Scans Table */}
           <div className="xl:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-sm tracking-wide">Recent AI Obesity Predictions</h3>
+              <h3 className="font-bold text-sm tracking-wide">Recent Patient Obesity Risks</h3>
               <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 cursor-pointer hover:underline">All Records</span>
             </div>
 
@@ -125,13 +121,12 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Quick Schedule Widget */}
           <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
             <h3 className="font-bold text-sm tracking-wide mb-6">Upcoming Consultations</h3>
             <div className="space-y-4">
               {[
                 { time: '14:30', name: 'Barry Allen', desc: 'Diet plan review' },
-                { time: '15:15', name: 'Arthur Curry', desc: 'AI weight trend review' },
+                { time: '15:15', name: 'Arthur Curry', desc: 'Weight trend assessment' },
                 { time: '16:00', name: 'Hal Jordan', desc: 'Initial bloodwork assessment' }
               ].map((apt, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/30">

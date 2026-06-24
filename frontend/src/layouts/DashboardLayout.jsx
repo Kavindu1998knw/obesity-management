@@ -26,7 +26,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
     return false;
   });
 
-  // Load user data on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -34,7 +33,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
     }
   }, []);
 
-  // Sync theme
   useEffect(() => {
     const root = window.document.documentElement;
     if (darkMode) {
@@ -52,7 +50,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
     navigate('/login');
   };
 
-  // Helper for role details
   const getRoleDetails = () => {
     switch (role) {
       case 'admin':
@@ -69,8 +66,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
       
-      {/* ================= SIDEBAR ================= */}
-      {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
           onClick={() => setIsSidebarOpen(false)}
@@ -84,21 +79,19 @@ export default function DashboardLayout({ children, role, menuItems }) {
         <div className="h-full flex flex-col justify-between p-6">
           
           <div className="space-y-8">
-            {/* Logo */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
                   <roleMeta.icon className="text-xl" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-extrabold tracking-tight">AI Obesity OS</h2>
+                  <h2 className="text-sm font-extrabold tracking-tight">CarePath OS</h2>
                   <span className={`text-[9px] font-mono border px-1.5 py-0.5 rounded-full ${roleMeta.color}`}>
                     {role.toUpperCase()}
                   </span>
                 </div>
               </div>
               
-              {/* Close menu for mobile */}
               <button 
                 onClick={() => setIsSidebarOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 lg:hidden focus:outline-none"
@@ -107,14 +100,13 @@ export default function DashboardLayout({ children, role, menuItems }) {
               </button>
             </div>
 
-            {/* Navigation Menu */}
             <nav className="space-y-1">
               <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3 px-3">
                 Workspace Menu
               </span>
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
-                const isActive = item.active || index === 0; // Default active highlight on first tab
+                const isActive = item.active || index === 0;
                 return (
                   <button
                     key={index}
@@ -133,7 +125,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
             </nav>
           </div>
 
-          {/* User profile / Logout */}
           <div className="border-t border-slate-200 dark:border-slate-800/80 pt-6 space-y-4">
             <div className="flex items-center space-x-3 px-1">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 to-teal-400 flex items-center justify-center text-white font-bold text-sm shadow">
@@ -157,13 +148,10 @@ export default function DashboardLayout({ children, role, menuItems }) {
         </div>
       </aside>
 
-      {/* ================= MAIN CONTENT AREA ================= */}
       <div className="flex-1 flex flex-col min-w-0">
         
-        {/* Top Navbar */}
         <header className="sticky top-0 z-30 h-16 border-b border-slate-200 dark:border-slate-800/80 bg-white/75 dark:bg-slate-900/75 backdrop-blur-md flex items-center justify-between px-6 transition-all">
           
-          {/* Left: Mobile hamburger */}
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => setIsSidebarOpen(true)}
@@ -172,7 +160,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
               <FaBars />
             </button>
 
-            {/* Desktop Mock Search Bar */}
             <div className="hidden md:flex items-center space-x-2.5 px-3 py-1.5 w-64 rounded-xl bg-slate-100 dark:bg-slate-950/60 border border-slate-200/50 dark:border-slate-800/50">
               <FaMagnifyingGlass className="text-slate-400 text-xs" />
               <input 
@@ -183,15 +170,12 @@ export default function DashboardLayout({ children, role, menuItems }) {
             </div>
           </div>
 
-          {/* Right: Actions */}
           <div className="flex items-center space-x-4">
             
-            {/* HIPAA Status */}
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold font-mono bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
               HIPAA SECURED
             </span>
 
-            {/* Dark Mode */}
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
@@ -199,7 +183,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
               {darkMode ? <FaSun className="text-xs" /> : <FaMoon className="text-xs" />}
             </button>
 
-            {/* Mock Notifications */}
             <button className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 relative cursor-pointer">
               <FaBell className="text-xs" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
@@ -208,7 +191,6 @@ export default function DashboardLayout({ children, role, menuItems }) {
 
         </header>
 
-        {/* Dynamic Main Workspace Children */}
         <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>

@@ -7,7 +7,6 @@ import DoctorDashboard from '../pages/doctor/DoctorDashboard';
 import PatientDashboard from '../pages/patient/PatientDashboard';
 import ProtectedRoute from '../components/ProtectedRoute';
 
-// Automatically forwards logged-in users to their dashboard if they hit the base path
 function RootRedirect() {
   const token = localStorage.getItem('token');
   const userString = localStorage.getItem('user');
@@ -19,7 +18,6 @@ function RootRedirect() {
         return <Navigate to={`/${user.role}/dashboard`} replace />;
       }
     } catch (e) {
-      // Clear corrupt session storage and route to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
@@ -32,11 +30,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         
-        {/* Protected Dashboard Routes */}
         <Route 
           path="/admin/dashboard" 
           element={
@@ -64,7 +60,6 @@ export default function AppRouter() {
           } 
         />
         
-        {/* Fallbacks */}
         <Route path="/" element={<RootRedirect />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

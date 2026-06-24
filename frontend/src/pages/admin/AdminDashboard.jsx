@@ -28,17 +28,15 @@ export default function AdminDashboard() {
     <DashboardLayout role="admin" menuItems={menuItems}>
       <div className="space-y-6">
         
-        {/* Header Title */}
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Welcome Admin 👋
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Obesity System Portal Overview • Today is {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            Obesity Registry Workspace • Today is {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
 
-        {/* Dashboard Grid Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card, i) => {
             const Icon = card.icon;
@@ -47,7 +45,6 @@ export default function AdminDashboard() {
                 key={i} 
                 className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm hover:shadow-md transition-all duration-300"
               >
-                {/* Accent line top */}
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.color}`} />
                 
                 <div className="flex items-center justify-between">
@@ -73,10 +70,8 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {/* Dynamic Mock Logs / Content */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           
-          {/* Main User Activity Table */}
           <div className="xl:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-sm tracking-wide">Registered Doctors Status</h3>
@@ -121,13 +116,12 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Quick System Settings / Status */}
           <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
             <h3 className="font-bold text-sm tracking-wide mb-6">System Health Log</h3>
             <div className="space-y-4">
               {[
                 { log: 'Database backup successfully uploaded', time: '10 mins ago', type: 'success' },
-                { log: 'AI Model obesity-prediction-v3 redeployed', time: '1 hour ago', type: 'info' },
+                { log: 'Statistical risk model v3 updated', time: '1 hour ago', type: 'info' },
                 { log: 'Server resource peak: CPU usage at 78%', time: '2 hours ago', type: 'warning' }
               ].map((log, i) => (
                 <div key={i} className="flex items-start space-x-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/30">

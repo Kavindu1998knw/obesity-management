@@ -19,7 +19,7 @@ import AuthLayout from '../layouts/AuthLayout';
 export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState('patient'); // patient | doctor | admin
+  const [role, setRole] = useState('patient');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +30,6 @@ export default function RegisterPage() {
   const [validationError, setValidationError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Clear errors on field updates
   useEffect(() => {
     setValidationError('');
     setSubmitSuccess(false);
@@ -39,7 +38,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Client-side Validations
     if (!fullName || !email || !password || !confirmPassword) {
       setValidationError('Please fill in all fields.');
       return;
@@ -59,7 +57,6 @@ export default function RegisterPage() {
     setValidationError('');
     
     try {
-      // Connect to actual backend registration endpoint
       const response = await axios.post('http://localhost:5000/api/auth/register', {
         fullName,
         email,
@@ -69,7 +66,6 @@ export default function RegisterPage() {
 
       if (response.data.success) {
         setSubmitSuccess(true);
-        // Navigate to login after 1.5 seconds
         setTimeout(() => {
           navigate('/login');
         }, 1500);
@@ -90,12 +86,10 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout>
-      {/* Ambient behind-card glow */}
       <div className="absolute -inset-1 bg-gradient-to-r from-sky-400 to-teal-400 rounded-3xl blur-2xl opacity-35 dark:opacity-20 pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 backdrop-blur-xl bg-white/20 dark:bg-slate-900/45 border border-white/30 dark:border-slate-800/40 shadow-2xl rounded-3xl p-8 transition-all duration-300">
         
-        {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Create Your Account
@@ -105,7 +99,6 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Role Selection */}
         <div className="mb-5">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-2.5">
             Select Portal Role
@@ -140,10 +133,8 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* Full Name */}
           <div>
             <label htmlFor="fullName" className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-1.5">
               Full Name
@@ -164,7 +155,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Email Address */}
           <div>
             <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-1.5">
               Email Address
@@ -185,7 +175,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Password */}
           <div>
             <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-1.5">
               Password
@@ -213,7 +202,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-1.5">
               Confirm Password
@@ -241,7 +229,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Validation Errors */}
           <AnimatePresence>
             {validationError && (
               <motion.div 
@@ -256,7 +243,6 @@ export default function RegisterPage() {
             )}
           </AnimatePresence>
 
-          {/* Success Banner */}
           <AnimatePresence>
             {submitSuccess && (
               <motion.div 
@@ -273,7 +259,6 @@ export default function RegisterPage() {
             )}
           </AnimatePresence>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={isSubmitting || submitSuccess}
@@ -299,7 +284,6 @@ export default function RegisterPage() {
 
         </form>
 
-        {/* Navigation */}
         <div className="mt-6 text-center border-t border-slate-900/10 dark:border-white/10 pt-4.5">
           <span className="text-xs text-slate-800/70 dark:text-slate-400">
             Already have an account? 
