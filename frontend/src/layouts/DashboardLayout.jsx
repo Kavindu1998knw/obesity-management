@@ -106,7 +106,7 @@ export default function DashboardLayout({ children, role, menuItems }) {
               </span>
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
-                const isActive = item.active || index === 0;
+                const isActive = !!item.active;
                 return (
                   <button
                     key={index}

@@ -49,6 +49,10 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
+    if (user.status === 'inactive') {
+      return res.status(403).json({ success: false, message: 'Your account is deactivated. Please contact an admin.' });
+    }
+
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,

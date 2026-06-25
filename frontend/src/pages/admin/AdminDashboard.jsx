@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaUserDoctor, 
   FaUser, 
@@ -10,11 +11,12 @@ import {
 import DashboardLayout from '../../layouts/DashboardLayout';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const menuItems = [
-    { label: 'Dashboard', icon: FaShieldHalved, active: true },
-    { label: 'Doctors', icon: FaUserDoctor },
-    { label: 'Patients', icon: FaUser },
-    { label: 'Appointments', icon: FaCalendarCheck }
+    { label: 'Dashboard', icon: FaShieldHalved, active: true, onClick: () => navigate('/admin/dashboard') },
+    { label: 'Doctors', icon: FaUserDoctor, onClick: () => navigate('/admin/doctors') },
+    { label: 'Patients', icon: FaUser, onClick: () => navigate('/admin/patients') },
+    { label: 'Appointments', icon: FaCalendarCheck, onClick: () => navigate('/admin/appointments') }
   ];
 
   const cards = [

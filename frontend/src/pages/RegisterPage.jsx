@@ -78,11 +78,7 @@ export default function RegisterPage() {
     }
   };
 
-  const roles = [
-    { id: 'patient', label: 'Patient', icon: FaUser, color: 'from-sky-500 to-cyan-500' },
-    { id: 'doctor', label: 'Doctor', icon: FaUserDoctor, color: 'from-teal-500 to-emerald-500' },
-    { id: 'admin', label: 'Admin', icon: FaShieldHalved, color: 'from-indigo-500 to-violet-500' }
-  ];
+
 
   return (
     <AuthLayout>
@@ -99,39 +95,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300 mb-2.5">
-            Select Portal Role
-          </label>
-          <div className="relative flex p-1.5 bg-slate-900/10 dark:bg-black/35 rounded-2xl border border-white/20 dark:border-slate-800/50">
-            {roles.map((r) => {
-              const Icon = r.icon;
-              const isActive = role === r.id;
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setRole(r.id)}
-                  className={`relative flex-1 flex flex-col md:flex-row items-center justify-center space-x-0 md:space-x-2 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
-                    isActive 
-                      ? 'text-white' 
-                      : 'text-slate-800 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeRoleTab"
-                      className={`absolute inset-0 rounded-xl bg-gradient-to-r ${r.color} shadow-md`}
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <Icon className="text-sm relative z-10 mb-1 md:mb-0" />
-                  <span className="relative z-10">{r.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+
 
         <form onSubmit={handleSubmit} className="space-y-4">
           

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import DoctorManagement from '../pages/admin/DoctorManagement';
 import DoctorDashboard from '../pages/doctor/DoctorDashboard';
 import PatientDashboard from '../pages/patient/PatientDashboard';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -38,6 +39,15 @@ export default function AppRouter() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/admin/doctors" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DoctorManagement />
             </ProtectedRoute>
           } 
         />
