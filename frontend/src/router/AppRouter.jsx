@@ -4,6 +4,8 @@ import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import DoctorManagement from '../pages/admin/DoctorManagement';
+import PatientManagement from '../pages/admin/PatientManagement';
+import AppointmentManagement from '../pages/admin/AppointmentManagement';
 import DoctorDashboard from '../pages/doctor/DoctorDashboard';
 import PatientDashboard from '../pages/patient/PatientDashboard';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -48,6 +50,24 @@ export default function AppRouter() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <DoctorManagement />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/admin/patients" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <PatientManagement />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/admin/appointments" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AppointmentManagement />
             </ProtectedRoute>
           } 
         />
