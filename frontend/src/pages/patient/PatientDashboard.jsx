@@ -319,7 +319,14 @@ export default function PatientDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => { setActiveMenu(item.id); setSidebarOpen(false); }}
+                onClick={() => {
+                  if (item.id === 'appointments') {
+                    navigate('/patient/appointments');
+                  } else {
+                    setActiveMenu(item.id);
+                  }
+                  setSidebarOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-sky-500 text-white shadow-sm'
@@ -666,7 +673,10 @@ export default function PatientDashboard() {
                     <p className="text-[10px] text-slate-400">{APPOINTMENTS.length} scheduled</p>
                   </div>
                 </div>
-                <button className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600 transition-colors shadow-sm">
+                <button
+                  onClick={() => navigate('/patient/appointments', { state: { openRequest: true } })}
+                  className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600 transition-colors shadow-sm cursor-pointer"
+                >
                   <FaPlus className="text-[9px]" />
                   <span>Request</span>
                 </button>

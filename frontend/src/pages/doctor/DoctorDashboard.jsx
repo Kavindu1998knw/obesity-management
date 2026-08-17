@@ -217,7 +217,14 @@ export default function DoctorDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => { setActiveMenu(item.id); setSidebarOpen(false); }}
+                onClick={() => {
+                  if (item.id === 'patients') {
+                    navigate('/doctor/patients');
+                  } else {
+                    setActiveMenu(item.id);
+                  }
+                  setSidebarOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
                   isActive
                     ? 'bg-gradient-to-r from-sky-500 to-teal-500 text-white shadow-lg shadow-sky-500/25'

@@ -203,3 +203,158 @@ export const rejectAppointment = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to reject appointment.' });
   }
 };
+
+// @desc    Get Patient Appointments
+// @route   GET /api/patient/appointments
+// @access  Private/Patient
+export const getPatientAppointments = async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'Patient profile not found.' });
+    }
+
+    const list = await Appointment.find({ patientId: patient._id })
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId' }
+      })
+      .sort({ createdAt: -1 });
+
+    const formatted = list
+      .filter(item => item.doctorId && item.doctorId.userId)
+      .map(item => ({
+        _id: item._id,
+        doctorId: item.doctorId._id,
+        doctorName: item.doctorId.userId.fullName,
+        doctorEmail: item.doctorId.userId.email,
+        department: item.department,
+        appointmentDate: item.appointmentDate,
+        appointmentTime: item.appointmentTime,
+        reasonForVisit: item.reasonForVisit,
+        status: item.status,
+        notes: item.notes,
+        createdAt: item.createdAt
+      }));
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (err) {
+    console.error('Error fetching patient appointments:', err);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve appointments.' });
+  }
+};
+
+// @desc    Create Patient Appointment Request
+// @route   POST /api/patient/appointments
+// @access  Private/Patient
+export const createPatientAppointment = async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'Patient profile not found.' });
+    }
+
+    const { doctorId, department, appointmentDate, appointmentTime, reasonForVisit, notes } = req.body;
+
+    if (!doctorId || !department || !appointmentDate || !appointmentTime || !reasonForVisit) {
+      return res.status(400).json({ success: false, message: 'All required fields must be filled.' });
+    }
+
+    const doctorExists = await Doctor.findById(doctorId);
+    if (!doctorExists) {
+      return res.status(400).json({ success: false, message: 'Doctor not found.' });
+    }
+
+    const appointment = new Appointment({
+      patientId: patient._id,
+      doctorId,
+      department,
+      appointmentDate,
+      appointmentTime,
+      reasonForVisit,
+      notes: notes || '',
+      status: 'Pending'
+    });
+
+    await appointment.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Appointment request submitted successfully',
+      data: appointment
+    });
+  } catch (err) {
+    console.error('Error creating patient appointment:', err);
+    return res.status(500).json({ success: false, message: 'Failed to submit appointment request.' });
+  }
+};
+
+// @desc    Reschedule Patient Appointment Request
+// @route   PUT /api/patient/appointments/:id/reschedule
+// @access  Private/Patient
+export const reschedulePatientAppointment = async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'Patient profile not found.' });
+    }
+
+    const { appointmentDate, appointmentTime, notes } = req.body;
+
+    if (!appointmentDate || !appointmentTime) {
+      return res.status(400).json({ success: false, message: 'Date and time are required for rescheduling.' });
+    }
+
+    const appointment = await Appointment.findOne({ _id: req.params.id, patientId: patient._id });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found.' });
+    }
+
+    appointment.appointmentDate = appointmentDate;
+    appointment.appointmentTime = appointmentTime;
+    appointment.status = 'Reschedule Pending';
+    if (notes) {
+      appointment.notes = `${appointment.notes || ''}\n[Reschedule Reason]: ${notes}`.trim();
+    }
+
+    await appointment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reschedule request submitted successfully',
+      data: appointment
+    });
+  } catch (err) {
+    console.error('Error rescheduling appointment:', err);
+    return res.status(500).json({ success: false, message: 'Failed to submit reschedule request.' });
+  }
+};
+
+// @desc    Cancel Patient Appointment Request
+// @route   PATCH /api/patient/appointments/:id/cancel
+// @access  Private/Patient
+export const cancelPatientAppointment = async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'Patient profile not found.' });
+    }
+
+    const appointment = await Appointment.findOne({ _id: req.params.id, patientId: patient._id });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found.' });
+    }
+
+    appointment.status = 'Cancelled';
+    await appointment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Appointment request cancelled successfully',
+      data: appointment
+    });
+  } catch (err) {
+    console.error('Error cancelling appointment:', err);
+    return res.status(500).json({ success: false, message: 'Failed to cancel appointment request.' });
+  }
+};

@@ -7,7 +7,9 @@ import DoctorManagement from '../pages/admin/DoctorManagement';
 import PatientManagement from '../pages/admin/PatientManagement';
 import AppointmentManagement from '../pages/admin/AppointmentManagement';
 import DoctorDashboard from '../pages/doctor/DoctorDashboard';
+import DoctorPatients from '../pages/doctor/DoctorPatients';
 import PatientDashboard from '../pages/patient/PatientDashboard';
+import PatientAppointments from '../pages/patient/PatientAppointments';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 function RootRedirect() {
@@ -82,10 +84,28 @@ export default function AppRouter() {
         />
         
         <Route 
+          path="/doctor/patients" 
+          element={
+            <ProtectedRoute allowedRoles={['doctor']}>
+              <DoctorPatients />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
           path="/patient/dashboard" 
           element={
             <ProtectedRoute allowedRoles={['patient']}>
               <PatientDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/patient/appointments" 
+          element={
+            <ProtectedRoute allowedRoles={['patient']}>
+              <PatientAppointments />
             </ProtectedRoute>
           } 
         />
