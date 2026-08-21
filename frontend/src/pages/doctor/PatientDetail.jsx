@@ -6,19 +6,31 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer 
 } from 'recharts';
 import { 
-  FaUser, FaNotesMedical, FaStethoscope, FaUtensils, FaChartLine, FaFileAlt, 
-  FaArrowLeft, FaExclamationTriangle
-} from 'react-icons/fa';
+  User,
+  Activity,
+  HeartPulse,
+  Utensils,
+  TrendingUp,
+  FileText,
+  ArrowLeft,
+  Calendar,
+  Scale,
+  Ruler,
+  Save,
+  Loader2,
+  Plus,
+  Stethoscope
+} from 'lucide-react';
 
 const VALID_TABS = ['overview', 'health', 'assessments', 'meals', 'progress', 'notes'];
 
-function getObesityColor(level) {
-  if (!level || level === 'Not Assessed') return 'bg-slate-50 border-slate-100 text-slate-700';
-  if (level.includes('Obesity')) return 'bg-red-50 border-red-100 text-red-700';
-  if (level.includes('Overweight')) return 'bg-orange-50 border-orange-100 text-orange-700';
-  if (level === 'Normal_Weight') return 'bg-green-50 border-green-100 text-green-700';
-  if (level === 'Insufficient_Weight') return 'bg-blue-50 border-blue-100 text-blue-700';
-  return 'bg-slate-50 border-slate-100 text-slate-700';
+function getObesityBadge(level) {
+  if (!level || level === 'Not Assessed') return 'bg-slate-100 text-slate-600 border-slate-200';
+  if (level.includes('Obesity_Type_II') || level.includes('Obesity_Type_III')) return 'bg-rose-50 text-rose-700 border-rose-200';
+  if (level.includes('Obesity') || level.includes('Overweight')) return 'bg-amber-50 text-amber-700 border-amber-200';
+  if (level === 'Normal_Weight') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (level === 'Insufficient_Weight') return 'bg-sky-50 text-sky-700 border-sky-200';
+  return 'bg-slate-100 text-slate-700 border-slate-200';
 }
 
 function formatObesityLabel(val) {
@@ -63,7 +75,6 @@ export default function PatientDetail() {
 
   useEffect(() => {
     fetchPatientDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchPatientDetails = async () => {
@@ -118,12 +129,12 @@ export default function PatientDetail() {
         setNoteMessage({ type: 'success', text: 'Note updated successfully.' });
       } else {
         await apiClient.post(`/doctor/patients/${id}/notes`, { note: newNote });
-        setNoteMessage({ type: 'success', text: 'Note added successfully.' });
+        setNoteMessage({ type: 'success', text: 'Clinical note added successfully.' });
       }
-      
+
       setNewNote('');
       setEditingNoteId(null);
-      fetchPatientDetails(); // Refresh to get new notes
+      fetchPatientDetails();
     } catch (err) {
       setNoteMessage({ type: 'error', text: err.response?.data?.message || 'Failed to save note.' });
     } finally {
@@ -131,21 +142,28 @@ export default function PatientDetail() {
     }
   };
 
-  const startEditNote = (note) => {
+  const handleEditNote = (note) => {
     setEditingNoteId(note._id);
     setNewNote(note.note);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
 
-  const cancelEditNote = () => {
-    setEditingNoteId(null);
-    setNewNote('');
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm("Are you sure you want to delete this clinical note?")) return;
+    try {
+      await apiClient.delete(`/doctor/patients/${id}/notes/${noteId}`);
+      fetchPatientDetails();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete note.");
+    }
   };
 
   if (loading) {
     return (
       <DashboardLayout role="doctor">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="flex flex-col justify-center items-center h-80 text-slate-400 space-y-2">
+          <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs font-medium">Loading clinical profile...</span>
         </div>
       </DashboardLayout>
     );
@@ -154,545 +172,516 @@ export default function PatientDetail() {
   if (error || !patientData) {
     return (
       <DashboardLayout role="doctor">
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-3">
-          <FaExclamationTriangle />
-          {error || 'Patient not found.'}
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-2xl text-center text-xs font-medium">
+          {error || 'Patient not found'}
         </div>
-        <Link to="/doctor/patients" className="mt-4 inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800">
-          <FaArrowLeft /> Back to Patients List
-        </Link>
       </DashboardLayout>
     );
   }
 
-  const { profile, assessments, mealPlans, progressRecords, notes } = patientData;
+  const { patient, overview, assessments = [], mealPlan, progress = [], notes = [] } = patientData;
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: FaUser },
-    { id: 'health', label: 'Health Details', icon: FaNotesMedical },
-    { id: 'assessments', label: 'Assessments', icon: FaStethoscope },
-    { id: 'meals', label: 'Meal Plan', icon: FaUtensils },
-    { id: 'progress', label: 'Progress', icon: FaChartLine },
-    { id: 'notes', label: 'Doctor Notes', icon: FaFileAlt },
+    { id: 'overview', label: 'Overview', icon: User },
+    { id: 'health', label: 'Health Details', icon: HeartPulse },
+    { id: 'assessments', label: 'AI Assessments', icon: Activity },
+    { id: 'meals', label: 'Meal Plan', icon: Utensils },
+    { id: 'progress', label: 'Progress Tracking', icon: TrendingUp },
+    { id: 'notes', label: 'Clinical Notes', icon: FileText }
   ];
-
-  const progressChartData = (progressRecords || []).map(r => ({
-    date: new Date(r.date).toLocaleDateString(),
-    weight: r.weight,
-    bmi: r.bmi
-  })).reverse(); // Oldest first for chart
 
   return (
     <DashboardLayout role="doctor">
-      {/* Header */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-4">
-          <Link to="/doctor/patients" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-            <FaArrowLeft />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-[#172033]">{profile.fullName}</h1>
-            <p className="text-sm text-[#64748B] mt-1">Patient ID: {String(profile.id).substring(String(profile.id).length - 8).toUpperCase()}</p>
+      <div className="space-y-6 pb-10">
+        
+        {/* Top Navigation & Patient Summary Banner */}
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/doctor/patients" 
+              className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 hover:text-teal-700 hover:bg-teal-50 hover:border-teal-200 transition-colors"
+              title="Back to Patients Directory"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  {patient.name}
+                </h1>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-semibold uppercase">
+                  #{patient._id.slice(-6).toUpperCase()}
+                </span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getObesityBadge(overview?.latestObesityClass)}`}>
+                  {formatObesityLabel(overview?.latestObesityClass)}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {patient.age} years • {patient.gender} • BMI: <span className="font-bold text-slate-800">{overview?.currentBmi || 'N/A'} kg/m²</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2.5 self-end md:self-auto">
+            <Link
+              to={`/doctor/assessments/new?patient=${patient._id}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+            >
+              <Activity className="w-4 h-4" />
+              <span>New Assessment</span>
+            </Link>
+            {assessments.length > 0 && (
+              <Link
+                to={`/doctor/meals/new?assessment=${assessments[0]._id}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+              >
+                <Utensils className="w-4 h-4" />
+                <span>Create Meal Plan</span>
+              </Link>
+            )}
           </div>
         </div>
-        <div className="flex gap-2">
-           <Link to={`/doctor/assessments/new?patient=${profile.id}`} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
-            <FaStethoscope /> Start Assessment
-           </Link>
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm mb-6 overflow-hidden">
-        <div className="flex overflow-x-auto border-b border-slate-200 scrollbar-hide">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors relative ${
-                activeTab === tab.id ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <tab.icon className={activeTab === tab.id ? 'text-indigo-600' : 'text-slate-400'} />
-              {tab.label}
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600" />
-              )}
-            </button>
-          ))}
+        {/* Tab Navigation Pill Bar */}
+        <div className="flex border-b border-slate-200/80 gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'bg-white border border-slate-100 text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-2xs'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Tab Content */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-        
-        {/* OVERVIEW TAB */}
+        {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-6 border-b pb-2">Patient Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-12">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Full Name</label>
-                <div className="mt-1 text-sm font-medium text-slate-900">{profile.fullName}</div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100 shrink-0">
+                  <Stethoscope className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Assigned Doctor</p>
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 truncate mt-0.5">
+                    Dr. {overview.assignedDoctor?.fullName || 'Assigned'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</label>
-                <div className="mt-1 text-sm font-medium text-slate-900">{profile.email}</div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                  <Scale className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Current BMI</p>
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 mt-0.5">
+                    {overview.currentBmi ? `${overview.currentBmi} kg/m²` : 'N/A'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone Number</label>
-                <div className="mt-1 text-sm font-medium text-slate-900">{profile.phoneNumber || 'N/A'}</div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shrink-0">
+                  <Ruler className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Height & Weight</p>
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 mt-0.5">
+                    {overview.height ? `${overview.height} cm` : '--'} / {overview.weight ? `${overview.weight} kg` : '--'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Age / Gender</label>
-                <div className="mt-1 text-sm font-medium text-slate-900">{profile.age} yrs / {profile.gender || 'N/A'}</div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Doctor</label>
-                <div className="mt-1 text-sm font-medium text-slate-900">Dr. {profile.assignedDoctorName}</div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Account Status</label>
-                <div className="mt-1 text-sm font-medium text-slate-900 capitalize">{profile.accountStatus || 'N/A'}</div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Next Appointment</label>
-                <div className="mt-1 text-sm font-medium text-indigo-600">
-                  {profile.nextAppointmentDate ? `${new Date(profile.nextAppointmentDate).toLocaleDateString()} at ${profile.nextAppointmentTime}` : 'No upcoming appointments'}
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shrink-0">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Risk Classification</p>
+                  <p className="font-bold text-xs text-rose-600 truncate mt-0.5">
+                    {formatObesityLabel(overview.latestObesityClass)}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <h3 className="text-md font-bold text-slate-900 mb-4 mt-8 border-b pb-2">Current Metrics</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-                <div className="text-xs text-slate-500 mb-1">Height</div>
-                <div className="text-xl font-bold text-slate-900">{profile.height ? `${profile.height} cm` : 'N/A'}</div>
+            {/* Next Consultation Info */}
+            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Next Scheduled Consultation</h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {overview.nextAppointment 
+                      ? `${new Date(overview.nextAppointment.date).toLocaleDateString()} at ${overview.nextAppointment.time || '10:00 AM'}`
+                      : 'No upcoming consultation booked.'}
+                  </p>
+                </div>
               </div>
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-                <div className="text-xs text-slate-500 mb-1">Weight</div>
-                <div className="text-xl font-bold text-slate-900">{profile.weight ? `${profile.weight} kg` : 'N/A'}</div>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-                <div className="text-xs text-slate-500 mb-1">Current BMI</div>
-                <div className="text-xl font-bold text-slate-900">{profile.currentBmi || 'N/A'}</div>
-              </div>
-              <div className={`rounded-lg p-4 border ${getObesityColor(profile.latestObesityClassification)}`}>
-                <div className="text-xs opacity-80 mb-1">Latest Classification</div>
-                <div className="text-xl font-bold">{formatObesityLabel(profile.latestObesityClassification)}</div>
-              </div>
-            </div>
-            <div className="mt-6 text-xs text-slate-500 italic">
-              * Note: Base account details (Name, Email, etc.) can only be modified by an Administrator.
+              {overview.nextAppointment && (
+                <Link to="/doctor/appointments" className="text-xs font-semibold text-teal-600 hover:text-teal-800">
+                  View in Schedule →
+                </Link>
+              )}
             </div>
           </div>
         )}
 
-        {/* HEALTH DETAILS TAB */}
+        {/* TAB 2: HEALTH DETAILS FORM */}
         {activeTab === 'health' && (
-          <form onSubmit={saveHealthDetails}>
-            <div className="flex justify-between items-center mb-6 border-b pb-2">
-              <h2 className="text-lg font-bold text-slate-900">Health & Prediction Details</h2>
-              <button 
-                type="submit" 
-                disabled={savingHealth}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-              >
-                {savingHealth ? 'Saving...' : 'Save Health Details'}
-              </button>
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Patient Health & Dietary Preferences</h3>
+                <p className="text-xs text-slate-500">Record lifestyle metrics and dietary constraints for automated meal plan generation.</p>
+              </div>
             </div>
-            
+
             {healthMessage.text && (
-              <div className={`p-3 mb-6 rounded-lg text-sm ${healthMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <div className={`p-3.5 rounded-xl text-xs font-semibold border ${
+                healthMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
                 {healthMessage.text}
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              {/* Prediction Features */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-slate-700 border-b pb-2">Lifestyle & Habits (ML Inputs)</h3>
-                
+            <form onSubmit={saveHealthDetails} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Family History of Overweight</label>
-                  <select name="familyHistoryOverweight" value={healthDetails.familyHistoryOverweight || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Frequent High-Calorie Food (FAVC)</label>
-                  <select name="highCalorieFoodConsumption" value={healthDetails.highCalorieFoodConsumption || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Vegetable Consumption (FCVC) 1-3</label>
-                  <input type="number" min="1" max="3" step="0.1" name="vegetableConsumption" value={healthDetails.vegetableConsumption || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. 2.5" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Main Meals Per Day (NCP) 1-4</label>
-                  <input type="number" min="1" max="4" step="0.1" name="mainMealsPerDay" value={healthDetails.mainMealsPerDay || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. 3.0" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Food Between Meals (CAEC)</label>
-                  <select name="foodBetweenMeals" value={healthDetails.foodBetweenMeals || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="no">No</option>
-                    <option value="Sometimes">Sometimes</option>
-                    <option value="Frequently">Frequently</option>
-                    <option value="Always">Always</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Daily Water Consumption (CH2O) 1-3 Liters</label>
-                  <input type="number" min="1" max="3" step="0.1" name="waterConsumption" value={healthDetails.waterConsumption || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. 2.0" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Calorie Monitoring (SCC)</label>
-                  <select name="calorieMonitoring" value={healthDetails.calorieMonitoring || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Other Features & Dietary */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-slate-700 border-b pb-2 invisible md:visible">Continued</h3>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Physical Activity (FAF) 0-3 days/week</label>
-                  <input type="number" min="0" max="3" step="0.1" name="physicalActivity" value={healthDetails.physicalActivity || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. 1.0" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Technology Usage (TUE) 0-24 hours/day</label>
-                  <input type="number" min="0" max="24" step="0.1" name="technologyUsage" value={healthDetails.technologyUsage || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. 5.0" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Smoking Status (SMOKE)</label>
-                  <select name="smokingStatus" value={healthDetails.smokingStatus || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Alcohol Consumption (CALC)</label>
-                  <select name="alcoholConsumption" value={healthDetails.alcoholConsumption || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="no">No</option>
-                    <option value="Sometimes">Sometimes</option>
-                    <option value="Frequently">Frequently</option>
-                    <option value="Always">Always</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Main Transportation Method (MTRANS)</label>
-                  <select name="transportationMethod" value={healthDetails.transportationMethod || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="Automobile">Automobile</option>
-                    <option value="Motorbike">Motorbike</option>
-                    <option value="Bike">Bike</option>
-                    <option value="Public_Transportation">Public Transportation</option>
-                    <option value="Walking">Walking</option>
-                  </select>
-                </div>
-
-                <h3 className="font-semibold text-slate-700 border-b pb-2 pt-4">Meal Plan Details</h3>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Dietary Preference</label>
-                  <select name="dietaryPreference" value={healthDetails.dietaryPreference || ''} onChange={handleHealthDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Select option...</option>
-                    <option value="None">None</option>
+                  <label className="block font-semibold text-slate-700 mb-1">Dietary Preference</label>
+                  <select
+                    name="dietaryPreference"
+                    value={healthDetails.dietaryPreference || 'No Special Preference'}
+                    onChange={handleHealthDetailChange}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none"
+                  >
+                    <option value="No Special Preference">No Special Preference</option>
                     <option value="Vegetarian">Vegetarian</option>
                     <option value="Vegan">Vegan</option>
+                    <option value="Pescatarian">Pescatarian</option>
+                    <option value="Keto">Keto</option>
+                    <option value="Halal">Halal</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Food Allergies (Comma separated)</label>
-                  <input type="text" name="foodAllergies" value={healthDetails.foodAllergies?.join(', ') || ''} onChange={handleArrayDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Milk, Peanuts, Soy" />
+                  <label className="block font-semibold text-slate-700 mb-1">Food Allergies (comma-separated)</label>
+                  <input
+                    type="text"
+                    name="foodAllergies"
+                    value={Array.isArray(healthDetails.foodAllergies) ? healthDetails.foodAllergies.join(', ') : (healthDetails.foodAllergies || '')}
+                    onChange={handleArrayDetailChange}
+                    placeholder="e.g. Peanuts, Shellfish, Dairy"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Disliked Foods (Comma separated)</label>
-                  <input type="text" name="dislikedFoods" value={healthDetails.dislikedFoods?.join(', ') || ''} onChange={handleArrayDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Tomatoes, Mushroom" />
+                  <label className="block font-semibold text-slate-700 mb-1">Medical Conditions (comma-separated)</label>
+                  <input
+                    type="text"
+                    name="medicalConditions"
+                    value={Array.isArray(healthDetails.medicalConditions) ? healthDetails.medicalConditions.join(', ') : (healthDetails.medicalConditions || '')}
+                    onChange={handleArrayDetailChange}
+                    placeholder="e.g. Type 2 Diabetes, Hypertension"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none"
+                  />
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Medical Conditions (Comma separated)</label>
-                  <input type="text" name="medicalConditions" value={healthDetails.medicalConditions?.join(', ') || ''} onChange={handleArrayDetailChange} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Diabetes, Hypertension" />
+
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="block font-semibold text-slate-700 mb-1">Disliked Foods (comma-separated)</label>
+                  <textarea
+                    rows={2}
+                    name="dislikedFoods"
+                    value={Array.isArray(healthDetails.dislikedFoods) ? healthDetails.dislikedFoods.join(', ') : (healthDetails.dislikedFoods || '')}
+                    onChange={handleArrayDetailChange}
+                    placeholder="Foods the patient prefers to avoid in recipes..."
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none"
+                  />
                 </div>
               </div>
-            </div>
-          </form>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={savingHealth}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {savingHealth ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Save Health Details</span>
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
-        {/* ASSESSMENTS TAB */}
+        {/* TAB 3: ASSESSMENTS HISTORY */}
         {activeTab === 'assessments' && (
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-6 border-b pb-2">Obesity Assessments</h2>
-            {(assessments || []).length === 0 ? (
-              <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-lg">No assessments have been recorded for this patient.</div>
-            ) : (
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Historical AI Predictions</h3>
+              <Link
+                to={`/doctor/assessments/new?patient=${patient._id}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Assessment</span>
+              </Link>
+            </div>
+
+            {assessments.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Date</th>
-                      <th className="px-4 py-3 font-medium">Predicted Class</th>
-                      <th className="px-4 py-3 font-medium">Doctor</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium text-center">Action</th>
+                      <th className="px-5 py-3.5">Assessment ID</th>
+                      <th className="px-5 py-3.5">Date</th>
+                      <th className="px-5 py-3.5">Calculated BMI</th>
+                      <th className="px-5 py-3.5">Predicted Class</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-100">
                     {assessments.map(a => (
-                      <tr key={a._id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 text-slate-900">{new Date(a.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-3 font-medium text-slate-900">{formatObesityLabel(a.obesityClass)}</td>
-                        <td className="px-4 py-3 text-slate-600">Dr. {a.doctorId?.fullName || 'Unknown'}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 text-xs rounded-full ${a.isApproved ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                            {a.isApproved ? 'Approved' : 'Pending'}
+                      <tr key={a._id} className="hover:bg-slate-50/70">
+                        <td className="px-5 py-3.5 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-semibold uppercase">
+                            #{a._id.slice(-6).toUpperCase()}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <Link to={`/doctor/assessments/${a._id}`} className="text-blue-600 hover:text-blue-800 text-xs font-medium">View Result</Link>
+                        <td className="px-5 py-3.5 text-slate-600">{new Date(a.createdAt).toLocaleDateString()}</td>
+                        <td className="px-5 py-3.5 font-bold text-slate-900">{a.bmi} kg/m²</td>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getObesityBadge(a.obesityClass)}`}>
+                            {formatObesityLabel(a.obesityClass)}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <Link
+                            to={`/doctor/assessments/${a._id}`}
+                            className="text-xs font-semibold text-teal-600 hover:text-teal-800 hover:underline"
+                          >
+                            View Result →
+                          </Link>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            ) : (
+              <div className="p-8 text-center text-slate-400 text-xs font-medium">
+                No past ML assessments recorded for this patient.
+              </div>
             )}
           </div>
         )}
 
-        {/* MEAL PLAN TAB */}
+        {/* TAB 4: MEAL PLAN */}
         {activeTab === 'meals' && (
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-6 border-b pb-2">Meal Plans</h2>
-            {(mealPlans || []).length === 0 ? (
-              <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-lg">No meal plans have been generated for this patient.</div>
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Approved Nutritional Plan</h3>
+            </div>
+
+            {mealPlan ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs bg-slate-50/70 p-4 rounded-xl border border-slate-100">
+                  <div>
+                    <span className="text-slate-400 text-[11px]">Daily Calorie Target:</span>
+                    <p className="text-sm font-bold text-teal-700 mt-0.5">{mealPlan.dailyCalorieTarget} kcal</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[11px]">Total Protein:</span>
+                    <p className="text-sm font-bold text-slate-800 mt-0.5">{mealPlan.totalProtein}g</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[11px]">Status:</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${
+                      mealPlan.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}>
+                      {mealPlan.status}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[11px]">Approved On:</span>
+                    <p className="text-xs font-semibold text-slate-800 mt-0.5">
+                      {mealPlan.approvedAt ? new Date(mealPlan.approvedAt).toLocaleDateString() : 'Draft'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Link
+                    to={`/doctor/meals/${mealPlan._id}`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-xs"
+                  >
+                    <Utensils className="w-4 h-4" />
+                    <span>Open Full Meal Plan Builder</span>
+                  </Link>
+                </div>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Created Date</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {mealPlans.map(mp => (
-                      <tr key={mp._id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 text-slate-900">{new Date(mp.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 text-xs rounded-full ${mp.status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                            {mp.status === 'Approved' ? 'Approved' : 'Draft'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <Link to={`/doctor/meals/${mp._id}`} className="text-blue-600 hover:text-blue-800 text-xs font-medium">View Meal Plan</Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="text-center py-8 text-slate-400 text-xs">
+                No meal plan generated yet.
               </div>
             )}
           </div>
         )}
 
-        {/* PROGRESS TAB */}
+        {/* TAB 5: PROGRESS */}
         {activeTab === 'progress' && (
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-6 border-b pb-2">Progress Tracking</h2>
-            {(progressRecords || []).length === 0 ? (
-              <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-lg">No progress records available for this patient.</div>
-            ) : (
-              <div className="space-y-8">
-                {/* Trend Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-4 text-center">Weight Trend (kg)</h3>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={progressChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                          <XAxis dataKey="date" tick={{fontSize: 12}} tickMargin={10} stroke="#94a3b8" />
-                          <YAxis tick={{fontSize: 12}} stroke="#94a3b8" domain={['dataMin - 2', 'dataMax + 2']} />
-                          <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                          <Line type="monotone" dataKey="weight" stroke="#4f46e5" strokeWidth={3} dot={{r: 4, fill: '#4f46e5', strokeWidth: 0}} activeDot={{r: 6}} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-4 text-center">BMI Trend</h3>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={progressChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                          <XAxis dataKey="date" tick={{fontSize: 12}} tickMargin={10} stroke="#94a3b8" />
-                          <YAxis tick={{fontSize: 12}} stroke="#94a3b8" domain={['dataMin - 1', 'dataMax + 1']} />
-                          <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                          <Line type="monotone" dataKey="bmi" stroke="#10b981" strokeWidth={3} dot={{r: 4, fill: '#10b981', strokeWidth: 0}} activeDot={{r: 6}} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
+          <div className="space-y-6">
+            {progress.length > 0 ? (
+              <>
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 h-72">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide mb-3">Weight & BMI Trend</h4>
+                  <ResponsiveContainer width="100%" height="85%">
+                    <LineChart data={progress}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={d => new Date(d).toLocaleDateString()} />
+                      <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#64748b' }} />
+                      <RechartsTooltip />
+                      <Line yAxisId="left" type="monotone" dataKey="weight" stroke="#0d9488" strokeWidth={2} name="Weight (kg)" />
+                      <Line yAxisId="right" type="monotone" dataKey="bmi" stroke="#4f46e5" strokeWidth={2} name="BMI" />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
 
-                {/* Progress Table */}
-                <div>
-                  <h3 className="text-md font-bold text-slate-900 mb-4">Progress Log</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left border border-slate-200 rounded-lg">
-                      <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <tr>
-                          <th className="px-4 py-3 font-medium border-b border-slate-200">Date</th>
-                          <th className="px-4 py-3 font-medium border-b border-slate-200">Weight</th>
-                          <th className="px-4 py-3 font-medium border-b border-slate-200">BMI</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {progressRecords.map(pr => (
-                          <tr key={pr._id} className="hover:bg-slate-50">
-                            <td className="px-4 py-3 font-medium text-slate-900">{new Date(pr.date).toLocaleDateString()}</td>
-                            <td className="px-4 py-3 text-slate-600">{pr.weight} kg</td>
-                            <td className="px-4 py-3 text-slate-600">{pr.bmi}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Historical Logs</h4>
                   </div>
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
+                      <tr>
+                        <th className="px-5 py-3">Date</th>
+                        <th className="px-5 py-3">Weight</th>
+                        <th className="px-5 py-3">BMI</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {progress.map(p => (
+                        <tr key={p._id} className="hover:bg-slate-50/70">
+                          <td className="px-5 py-3 font-medium text-slate-800">{new Date(p.date).toLocaleDateString()}</td>
+                          <td className="px-5 py-3 font-bold text-teal-700">{p.weight} kg</td>
+                          <td className="px-5 py-3 text-slate-700">{p.bmi}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+              </>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-2xl p-8 text-center text-slate-400 text-xs">
+                No historical progress records available for this patient.
               </div>
             )}
           </div>
         )}
 
-        {/* DOCTOR NOTES TAB */}
+        {/* TAB 6: CLINICAL NOTES */}
         {activeTab === 'notes' && (
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-6 border-b pb-2">Clinical Notes</h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Note Form */}
-              <div className="lg:col-span-1 bg-slate-50 p-5 rounded-xl border border-slate-200 self-start">
-                <h3 className="text-md font-semibold text-slate-800 mb-4">
-                  {editingNoteId ? 'Edit Clinical Note' : 'Add Clinical Note'}
-                </h3>
-                
-                {noteMessage.text && (
-                  <div className={`p-3 mb-4 rounded-lg text-sm ${noteMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {noteMessage.text}
-                  </div>
-                )}
-                
-                <form onSubmit={submitNote}>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Patient Name</label>
-                    <input type="text" value={profile.fullName} disabled className="w-full border border-slate-300 rounded-lg p-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" />
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Clinical Note</label>
-                    <textarea 
-                      rows="6"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Enter clinical observations, recommendations..."
-                      className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      required
-                      maxLength={5000}
-                    ></textarea>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <button 
-                      type="submit" 
-                      disabled={savingNote || !newNote.trim()}
-                      className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                    >
-                      {savingNote ? 'Saving...' : editingNoteId ? 'Update Note' : 'Save Note'}
-                    </button>
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Clinical Notes Timeline</h3>
+            </div>
+
+            {noteMessage.text && (
+              <div className={`p-3.5 rounded-xl text-xs font-semibold border ${
+                noteMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                {noteMessage.text}
+              </div>
+            )}
+
+            {/* Notes List */}
+            <div className="space-y-3">
+              {notes.length > 0 ? (
+                notes.map(n => (
+                  <div key={n._id} className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-900">Dr. {n.doctorId?.fullName || 'Clinician'}</span>
+                      <span className="text-slate-400 text-[11px]">{new Date(n.createdAt).toLocaleString()}</span>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{n.note}</p>
                     
-                    {editingNoteId && (
-                      <button 
-                        type="button" 
-                        onClick={cancelEditNote}
-                        className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition-colors"
-                      >
-                        Cancel
-                      </button>
+                    {n.doctorId?._id === loggedInUser._id && (
+                      <div className="flex justify-end gap-2 pt-1 border-t border-slate-200/50">
+                        <button
+                          onClick={() => handleEditNote(n)}
+                          className="text-[11px] font-semibold text-teal-600 hover:text-teal-800 cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNote(n._id)}
+                          className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
-                </form>
-              </div>
-
-              {/* Notes List */}
-              <div className="lg:col-span-2 space-y-4">
-                <h3 className="text-md font-semibold text-slate-800 mb-4">Previous Notes</h3>
-                
-                {(notes || []).length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 border border-dashed border-slate-300 rounded-xl">
-                    No clinical notes have been added for this patient.
-                  </div>
-                ) : (
-                  notes.map(note => (
-                    <div key={note._id} className={`p-5 rounded-xl border ${editingNoteId === note._id ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-white'} shadow-sm relative group`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="text-sm font-semibold text-slate-800">
-                          Dr. {note.doctorId?.fullName || 'Unknown'}
-                        </div>
-                        <div className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded">
-                          {new Date(note.createdAt).toLocaleString()}
-                        </div>
-                      </div>
-                      
-                      <div className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
-                        {note.note}
-                      </div>
-                      
-                      {String(note.doctorId?._id || note.doctorId) === String(loggedInUser?._id) && (
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => startEditNote(note)}
-                            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
-                          >
-                            Edit Note
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-slate-400 text-xs">No clinical notes recorded yet.</div>
+              )}
             </div>
+
+            {/* Add / Edit Note Form */}
+            <form onSubmit={submitNote} className="space-y-3 pt-3 border-t border-slate-100">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                {editingNoteId ? 'Edit Clinical Note' : 'Add New Clinical Note'}
+              </h4>
+              <textarea
+                rows={3}
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Write medical notes, clinical feedback, or observation logs..."
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none"
+                required
+              />
+              <div className="flex justify-end gap-2">
+                {editingNoteId && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditingNoteId(null); setNewNote(''); }}
+                    className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={savingNote}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {savingNote && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingNoteId ? 'Update Note' : 'Add Note'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         )}
-        
+
       </div>
     </DashboardLayout>
   );

@@ -2,7 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import apiClient from '../../services/apiClient';
 import { exportToPdf } from '../../utils/pdfExport';
-import { FaStethoscope, FaEye, FaDownload, FaFilter, FaTriangleExclamation } from 'react-icons/fa6';
+import {
+  Activity,
+  Eye,
+  FileDown,
+  Filter,
+  AlertTriangle,
+  X,
+  Sparkles,
+  Loader2
+} from 'lucide-react';
+
+function getObesityBadge(cls) {
+  if (!cls || cls === 'Not Assessed') return 'bg-slate-100 text-slate-600 border-slate-200';
+  if (cls.includes('Obesity_Type_II') || cls.includes('Obesity_Type_III')) return 'bg-rose-50 text-rose-700 border-rose-200';
+  if (cls.includes('Obesity') || cls.includes('Overweight')) return 'bg-amber-50 text-amber-700 border-amber-200';
+  if (cls === 'Normal_Weight' || cls === 'Normal') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (cls === 'Insufficient_Weight' || cls === 'Underweight') return 'bg-sky-50 text-sky-700 border-sky-200';
+  return 'bg-slate-100 text-slate-700 border-slate-200';
+}
 
 export default function PatientAssessments() {
   const [assessments, setAssessments] = useState([]);
@@ -28,7 +46,7 @@ export default function PatientAssessments() {
       setLoading(true);
       const res = await apiClient.get('/patient/assessments');
       setAssessments(res.data.data);
-    } catch (err) {
+    } catch {
       setError('Failed to load assessments.');
     } finally {
       setLoading(false);
@@ -88,249 +106,295 @@ export default function PatientAssessments() {
 
   return (
     <DashboardLayout role="patient">
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#172033]">My Assessments</h1>
-          <p className="text-sm text-[#64748B] mt-1">Review your obesity assessments and predictions from your doctor.</p>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-12 text-slate-500">Loading assessments...</div>
-      ) : error ? (
-        <div className="text-center py-12 text-red-500">{error}</div>
-      ) : (
-        <>
-          {/* Latest Assessment Card */}
-          {latestAssessment && (
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl shadow-md mb-8 text-white overflow-hidden">
-              <div className="p-6 sm:p-8 relative">
-                <FaStethoscope className="absolute right-[-20px] bottom-[-20px] text-[120px] text-white/10" />
-                <h2 className="text-sm font-bold text-indigo-100 tracking-wider uppercase mb-6 border-b border-white/20 pb-2">Latest Assessment</h2>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
-                  <div>
-                    <p className="text-indigo-200 text-xs font-bold uppercase mb-1">Date</p>
-                    <p className="text-lg font-bold">{new Date(latestAssessment.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-indigo-200 text-xs font-bold uppercase mb-1">Doctor</p>
-                    <p className="text-lg font-bold">Dr. {latestAssessment.doctorId?.fullName || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-indigo-200 text-xs font-bold uppercase mb-1">Measurements</p>
-                    <p className="text-sm font-medium">{latestAssessment.weight} kg, {latestAssessment.height} cm</p>
-                    <p className="text-sm font-bold mt-0.5">BMI: {latestAssessment.bmi}</p>
-                  </div>
-                  <div>
-                    <p className="text-indigo-200 text-xs font-bold uppercase mb-1">Prediction</p>
-                    <p className="text-xl font-black text-white capitalize leading-tight">
-                      {formatObesityClass(latestAssessment.obesityClass)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-end relative z-10">
-                  <button 
-                    onClick={() => openViewModal(latestAssessment)}
-                    className="px-6 py-2 bg-white text-indigo-700 font-bold rounded-lg shadow hover:bg-indigo-50 transition"
-                  >
-                    View Full Result
-                  </button>
-                </div>
+      <div className="space-y-6 pb-12">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100 shadow-xs">
+                <Activity className="w-5 h-5" />
               </div>
-            </div>
-          )}
-
-          {/* Assessment History */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h3 className="font-bold text-slate-800">Assessment History</h3>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <FaFilter className="text-slate-400" />
-                  <select 
-                    value={classFilter} 
-                    onChange={(e) => setClassFilter(e.target.value)}
-                    className="w-full sm:w-auto border border-slate-300 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">All Classifications</option>
-                    <option value="Insufficient_Weight">Insufficient Weight</option>
-                    <option value="Normal_Weight">Normal Weight</option>
-                    <option value="Overweight_Level_I">Overweight Level I</option>
-                    <option value="Overweight_Level_II">Overweight Level II</option>
-                    <option value="Obesity_Type_I">Obesity Type I</option>
-                    <option value="Obesity_Type_II">Obesity Type II</option>
-                    <option value="Obesity_Type_III">Obesity Type III</option>
-                  </select>
-                </div>
-                <input 
-                  type="date" 
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full sm:w-auto border border-slate-300 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-indigo-500"
-                />
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">AI Obesity Assessments</h1>
+                <p className="text-xs text-slate-500 mt-0.5">Review machine-learning health risk evaluations and clinical history.</p>
               </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-800">
-                  <tr>
-                    <th className="px-6 py-4 font-bold">Assessment ID</th>
-                    <th className="px-6 py-4 font-bold">Date</th>
-                    <th className="px-6 py-4 font-bold">Doctor</th>
-                    <th className="px-6 py-4 font-bold">BMI</th>
-                    <th className="px-6 py-4 font-bold">Prediction</th>
-                    <th className="px-6 py-4 font-bold text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {filteredAssessments.length > 0 ? filteredAssessments.map(appt => (
-                    <tr key={appt._id} className="hover:bg-slate-50 transition">
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">
-                        {appt._id.substring(appt._id.length - 8).toUpperCase()}
-                      </td>
-                      <td className="px-6 py-4">
-                        {new Date(appt.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-slate-900">
-                        Dr. {appt.doctorId?.fullName || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 font-bold">
-                        {appt.bmi}
-                      </td>
-                      <td className="px-6 py-4 capitalize font-medium text-indigo-700">
-                        {formatObesityClass(appt.obesityClass)}
-                      </td>
-                      <td className="px-6 py-4 flex justify-center gap-2">
-                        <button 
-                          onClick={() => openViewModal(appt)}
-                          className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition"
-                          title="View Assessment"
-                        >
-                          <FaEye />
-                        </button>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
-                        <FaStethoscope className="mx-auto text-4xl text-slate-300 mb-3" />
-                        <p className="font-medium">No assessments found.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
             </div>
           </div>
-        </>
-      )}
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col justify-center items-center h-80 text-slate-400 space-y-2">
+            <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-xs font-medium">Loading clinical assessments...</span>
+          </div>
+        ) : error ? (
+          <div className="p-6 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-center text-xs font-medium">
+            {error}
+          </div>
+        ) : (
+          <>
+            {/* Latest Assessment Hero Card */}
+            {latestAssessment && (
+              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-teal-950 rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-80 h-full bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="relative z-10 space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-semibold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Latest Clinical Assessment</span>
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      Evaluated: {new Date(latestAssessment.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                      <p className="text-[11px] text-teal-200 uppercase font-bold tracking-wider">Attending Clinician</p>
+                      <p className="text-base font-bold text-white mt-1">Dr. {latestAssessment.doctorId?.fullName || 'Assigned Specialist'}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] text-teal-200 uppercase font-bold tracking-wider">Anthropometrics</p>
+                      <p className="text-base font-bold text-white mt-1">{latestAssessment.weight} kg • {latestAssessment.height} cm</p>
+                      <p className="text-xs text-teal-300 mt-0.5">BMI: {latestAssessment.bmi} kg/m²</p>
+                    </div>
+
+                    <div className="col-span-2">
+                      <p className="text-[11px] text-teal-200 uppercase font-bold tracking-wider">Predicted Classification</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xl sm:text-2xl font-black text-white capitalize leading-tight">
+                          {formatObesityClass(latestAssessment.obesityClass)}
+                        </p>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getObesityBadge(latestAssessment.obesityClass)}`}>
+                          {formatObesityClass(latestAssessment.obesityClass)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button 
+                      onClick={() => openViewModal(latestAssessment)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View Complete Clinical Details</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Assessment History Card */}
+            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+              
+              {/* Filter Toolbar */}
+              <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+                <div className="flex flex-col sm:flex-row gap-3 flex-1 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select 
+                      value={classFilter} 
+                      onChange={(e) => setClassFilter(e.target.value)}
+                      className="px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-xs bg-white text-slate-700 font-medium cursor-pointer"
+                    >
+                      <option value="">All Classifications</option>
+                      <option value="Insufficient_Weight">Insufficient Weight</option>
+                      <option value="Normal_Weight">Normal Weight</option>
+                      <option value="Overweight_Level_I">Overweight Level I</option>
+                      <option value="Overweight_Level_II">Overweight Level II</option>
+                      <option value="Obesity_Type_I">Obesity Type I</option>
+                      <option value="Obesity_Type_II">Obesity Type II</option>
+                      <option value="Obesity_Type_III">Obesity Type III</option>
+                    </select>
+                  </div>
+
+                  <input 
+                    type="date" 
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-xs bg-white text-slate-700 font-medium cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 self-end md:self-auto">
+                  <span className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-100 px-3 py-1 rounded-full">
+                    Total: {filteredAssessments.length} {filteredAssessments.length === 1 ? 'Assessment' : 'Assessments'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Table Content */}
+              <div className="flex-1 overflow-x-auto">
+                {filteredAssessments.length === 0 ? (
+                  <div className="flex flex-col justify-center items-center h-64 text-slate-400 space-y-2">
+                    <Activity className="w-10 h-10 text-slate-300 stroke-[1.5]" />
+                    <p className="text-xs font-medium text-slate-500">No assessments found.</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50/80 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
+                      <tr>
+                        <th className="px-5 py-3.5">Assessment ID</th>
+                        <th className="px-5 py-3.5">Date</th>
+                        <th className="px-5 py-3.5">Doctor</th>
+                        <th className="px-5 py-3.5">BMI Score</th>
+                        <th className="px-5 py-3.5">AI Classification</th>
+                        <th className="px-5 py-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredAssessments.map((appt) => (
+                        <tr key={appt._id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-semibold uppercase">
+                              #{appt._id.slice(-6).toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-slate-700">
+                            {new Date(appt.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-5 py-3.5 font-medium text-slate-900">
+                            Dr. {appt.doctorId?.fullName || 'Specialist'}
+                          </td>
+                          <td className="px-5 py-3.5 font-bold text-slate-900">
+                            {appt.bmi} <span className="text-[10px] text-slate-400 font-normal">kg/m²</span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getObesityBadge(appt.obesityClass)}`}>
+                              {formatObesityClass(appt.obesityClass)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-right">
+                            <button 
+                              onClick={() => openViewModal(appt)}
+                              className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                              title="View Assessment"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+      </div>
 
       {/* View Assessment Modal */}
       {showModal && selectedAssessment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onClick={closeViewModal} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
-              <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <FaStethoscope className="text-indigo-600" /> Assessment Result
-              </h2>
-              <div className="flex items-center gap-3">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-teal-600" />
+                <h3 className="font-bold text-sm text-slate-900">Assessment Result & Metrics</h3>
+              </div>
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={handleDownloadPDF}
                   disabled={downloading}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-sm font-bold rounded transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
-                  <FaDownload /> {downloading ? 'Generating PDF...' : 'Download Report'}
+                  {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                  <span>{downloading ? 'Generating...' : 'Download PDF'}</span>
                 </button>
-                <button onClick={closeViewModal} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+                <button onClick={closeViewModal} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* Modal Body (Scrollable & Printable) */}
-            <div className="p-6 overflow-y-auto" ref={reportRef}>
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 text-xs" ref={reportRef}>
               
-              {/* Patient Information */}
-              <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-800 uppercase border-b pb-2 mb-4">Patient Information</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Patient & Doctor Banner */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <h4 className="font-bold text-slate-800 uppercase tracking-wide border-b border-slate-200 pb-2 mb-3">Clinical Evaluation Context</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
-                    <p className="text-xs text-slate-500 font-bold uppercase">Patient Name</p>
-                    <p className="font-medium text-slate-900">{patientProfile?.fullName || 'Unknown'}</p>
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Patient Name</span>
+                    <span className="font-bold text-slate-900">{patientProfile?.fullName || 'Assigned Patient'}</span>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-bold uppercase">Age / Gender</p>
-                    <p className="font-medium text-slate-900">{selectedAssessment.age} yrs / {selectedAssessment.gender}</p>
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Demographics</span>
+                    <span className="font-medium text-slate-800">{selectedAssessment.age} yrs • {selectedAssessment.gender}</span>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-bold uppercase">Assessment Date</p>
-                    <p className="font-medium text-slate-900">{new Date(selectedAssessment.createdAt).toLocaleDateString()}</p>
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Evaluation Date</span>
+                    <span className="font-medium text-slate-800">{new Date(selectedAssessment.createdAt).toLocaleDateString()}</span>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-bold uppercase">Doctor Name</p>
-                    <p className="font-medium text-slate-900">Dr. {selectedAssessment.doctorId?.fullName || 'Unknown'}</p>
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Attending Clinician</span>
+                    <span className="font-bold text-teal-700">Dr. {selectedAssessment.doctorId?.fullName || 'Specialist'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Measurements */}
-              <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-800 uppercase border-b pb-2 mb-4">Measurements</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-center">
-                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Height</p>
-                    <p className="text-xl font-bold text-slate-900">{selectedAssessment.height} <span className="text-sm font-normal">cm</span></p>
+              <div>
+                <h4 className="font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2 mb-3">Anthropometric Measurements</h4>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Height</span>
+                    <span className="text-lg font-bold text-slate-900">{selectedAssessment.height} <span className="text-xs font-normal">cm</span></span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-center">
-                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Weight</p>
-                    <p className="text-xl font-bold text-slate-900">{selectedAssessment.weight} <span className="text-sm font-normal">kg</span></p>
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Weight</span>
+                    <span className="text-lg font-bold text-slate-900">{selectedAssessment.weight} <span className="text-xs font-normal">kg</span></span>
                   </div>
-                  <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 text-center">
-                    <p className="text-xs text-indigo-500 font-bold uppercase mb-1">BMI</p>
-                    <p className="text-2xl font-black text-indigo-700">{selectedAssessment.bmi}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Prediction Result */}
-              <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-800 uppercase border-b pb-2 mb-4">Prediction Result</h3>
-                
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-lg p-6 mb-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                      <p className="text-sm text-indigo-600 font-bold uppercase tracking-wider mb-2">Predicted Classification</p>
-                      <p className="text-3xl font-black text-slate-800 capitalize leading-tight">
-                        {formatObesityClass(selectedAssessment.obesityClass)}
-                      </p>
-                    </div>
+                  <div className="bg-teal-50 p-3.5 rounded-xl border border-teal-100 text-teal-900">
+                    <span className="text-teal-600 block text-[10px] font-bold uppercase">BMI Score</span>
+                    <span className="text-xl font-black text-teal-700">{selectedAssessment.bmi}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Feature Importance (Static) */}
-              <div className="mb-6">
-                <h3 className="text-sm font-bold text-slate-800 uppercase border-b pb-2 mb-4">Important factors generally used by the model</h3>
+              {/* Classification Hero */}
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xs text-center space-y-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100">
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>AI Random Forest Classification</span>
+                </span>
+                <h3 className="text-2xl font-black text-slate-900 capitalize">
+                  {formatObesityClass(selectedAssessment.obesityClass)}
+                </h3>
+                <div>
+                  <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold border ${getObesityBadge(selectedAssessment.obesityClass)}`}>
+                    Clinical Status: {formatObesityClass(selectedAssessment.obesityClass)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Key Features Factors */}
+              <div>
+                <h4 className="font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2 mb-3">Key Features Evaluated by AI Model</h4>
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Weight</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Height</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Age</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Gender</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Family History</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Caloric Intake</span>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">Physical Activity</span>
+                  <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Weight & Height (BMI)</span>
+                  <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Age & Gender</span>
+                  <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Family Genetic History</span>
+                  <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg">High-Calorie Intake</span>
+                  <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Physical Movement (FAF)</span>
+                  <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Daily Water Consumption</span>
                 </div>
               </div>
 
-              {/* Disclaimer */}
-              <div className="mt-8 bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-start gap-3">
-                <FaTriangleExclamation className="text-amber-500 text-xl shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-800">
-                  <strong>Disclaimer:</strong> This prediction provides decision-support information and does not replace professional medical diagnosis. Please consult your doctor for personalized medical advice.
+              {/* Medical Notice */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  <strong>Clinical Decision Support Notice:</strong> This prediction serves as an automated decision-support aid and should be evaluated alongside professional clinical guidance before undertaking dietary or fitness changes.
                 </p>
               </div>
 

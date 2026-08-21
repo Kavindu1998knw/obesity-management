@@ -1,11 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FaBars, FaArrowRightFromBracket, FaUser } from 'react-icons/fa6';
-import { useNavigate, Link } from 'react-router-dom';
+import React from 'react';
+import { Menu, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-export default function DashboardHeader({ user, onOpenSidebar }) {
+export default function DashboardHeader({ user, onOpenSidebar, onLogout }) {
   const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -16,85 +14,109 @@ export default function DashboardHeader({ user, onOpenSidebar }) {
 
   const getInitials = (name) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
+  const getPortalTitle = () => {
+    switch (user?.role) {
+      case 'admin':
+        return 'Admin Control Center';
+      case 'doctor':
+        return 'Doctor Clinical Portal';
+      case 'patient':
+        return 'Patient Health Portal';
+      default:
+        return 'SmartObesity AI Portal';
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
+  };
+
+  const getRoleBadgeStyle = () => {
+    switch (user?.role) {
+      case 'admin':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'doctor':
+        return 'bg-teal-50 text-teal-700 border-teal-200';
+      case 'patient':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-slate-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-      <button
-        type="button"
-        className="-m-2.5 p-2.5 text-slate-700 lg:hidden focus:outline-none"
-        onClick={onOpenSidebar}
-      >
-        <span className="sr-only">Open sidebar</span>
-        <FaBars className="h-5 w-5" aria-hidden="true" />
-      </button>
+    <header className="sticky top-0 z-40 flex h-20 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-xs">
+      {/* Mobile Toggle & Portal Title */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl lg:hidden focus:outline-none transition-colors cursor-pointer"
+          onClick={onOpenSidebar}
+          aria-label="Open sidebar"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
 
-      {/* Separator */}
-      <div className="h-6 w-px bg-slate-200 lg:hidden" aria-hidden="true" />
-
-      <div className="flex flex-1 justify-end items-center gap-x-4 sm:gap-x-6">
-        
-        {/* Profile Dropdown */}
-        <div className="relative" ref={dropdownRef}>
-          <button 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-x-4 pr-4 sm:pr-6 focus:outline-none"
-          >
-            <div className="flex flex-col text-right hidden sm:block">
-              <span className="text-sm font-semibold leading-6 text-slate-900">{user?.fullName || 'User'}</span>
-              <span className="text-xs font-medium text-slate-500 capitalize">{user?.role || 'Guest'}</span>
+        {/* Dashboard Title & Live Status Indicator */}
+        <div className="hidden sm:flex items-center gap-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">{getPortalTitle()}</h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-xs text-slate-500 font-medium">System Online & Secure</span>
             </div>
-            <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shadow-sm hover:ring-2 hover:ring-blue-300 transition-all">
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side Header: User Identity & Direct Logout */}
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* User Identity Display */}
+        <div className="flex items-center gap-3 p-1 sm:px-2.5 sm:py-1.5 rounded-xl text-left select-none">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-500 text-white font-bold flex items-center justify-center shadow-xs text-sm ring-2 ring-white">
               {getInitials(user?.fullName)}
             </div>
-          </button>
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+          </div>
 
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-              {user?.role === 'patient' && (
-                <Link
-                  to="/patient/profile"
-                  className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  <FaUser className="text-slate-400" /> My Profile
-                </Link>
-              )}
-              {user?.role === 'doctor' && (
-                <Link
-                  to="/doctor/settings"
-                  className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  <FaUser className="text-slate-400" /> Settings
-                </Link>
-              )}
+          {/* Name & Role Badge */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold text-slate-900 leading-tight">
+                {user?.fullName || 'User'}
+              </span>
+              <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide border ${getRoleBadgeStyle()}`}>
+                {user?.role || 'User'}
+              </span>
             </div>
-          )}
+            <span className="text-xs text-slate-400 font-normal leading-tight hidden md:block">
+              {user?.email}
+            </span>
+          </div>
         </div>
-        
-        <div className="h-6 w-px bg-slate-200 hidden sm:block" aria-hidden="true" />
 
+        {/* Separator */}
+        <div className="h-6 w-px bg-slate-200" />
+
+        {/* Clean Direct Logout Button */}
         <button
-          onClick={handleLogout}
-          className="flex items-center gap-x-2 text-sm font-medium text-rose-600 hover:text-rose-700 transition-colors focus:outline-none"
+          type="button"
+          onClick={onLogout || handleLogout}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50/80 hover:bg-rose-100/90 border border-rose-200/70 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.98]"
+          title="Sign out of portal"
         >
-          <FaArrowRightFromBracket className="h-4 w-4" />
-          <span className="hidden sm:block">Log out</span>
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
     </header>

@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import apiClient from '../../services/apiClient';
-import { FaArrowLeft, FaExclamationTriangle, FaStethoscope } from 'react-icons/fa';
+import {
+  ArrowLeft,
+  Activity,
+  AlertTriangle,
+  Loader2,
+  CheckCircle2
+} from 'lucide-react';
 
 export default function NewAssessment() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const initialPatientId = queryParams.get('patient'); // user ID of the patient
+  const initialPatientId = queryParams.get('patient');
 
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +46,7 @@ export default function NewAssessment() {
 
   // Meal Plan Info
   const [dietaryPreference, setDietaryPreference] = useState('No Special Preference');
-  const [foodAllergies, setFoodAllergies] = useState([]);
+  const [foodAllergies, setFoodAllergies] = useState(['None']);
   const [otherAllergy, setOtherAllergy] = useState('');
   const [medicalConditions, setMedicalConditions] = useState(['None']);
   const [dislikedFoods, setDislikedFoods] = useState('');
@@ -57,11 +63,9 @@ export default function NewAssessment() {
   const fetchPatients = async () => {
     try {
       const response = await apiClient.get('/doctor/patients');
-      // The patients API returns patient profiles. We need the userId.
       setPatients(response.data.data);
       setLoading(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError('Failed to load assigned patients.');
       setLoading(false);
     }
@@ -152,7 +156,7 @@ export default function NewAssessment() {
         if (inp.MTRANS) setMTRANS(inp.MTRANS);
         else if (hd.transportationMethod) setMTRANS(hd.transportationMethod);
 
-        // Meal Plan Info (Preferences, Allergies, Medical Conditions, Dislikes)
+        // Meal Plan Info
         if (reqs.dietaryPreference && reqs.dietaryPreference !== 'None') {
           setDietaryPreference(reqs.dietaryPreference);
         } else if (hd.dietaryPreference && hd.dietaryPreference !== 'None') {
@@ -211,16 +215,13 @@ export default function NewAssessment() {
         }
 
       } else {
-        // No previous assessments: load from patient profile & onboarding healthDetails
         setLastAssessmentDate(null);
 
-        // Basic Measurements
         if (profile.age && profile.age !== 'N/A') setAge(String(profile.age));
         if (profile.gender && profile.gender !== 'N/A') setGender(profile.gender);
         if (profile.height) setHeightCm(String(profile.height));
         if (profile.weight) setWeight(String(profile.weight));
 
-        // Health Details (Eating Habits & Lifestyle)
         if (hd.familyHistoryOverweight) setFamilyHistory(hd.familyHistoryOverweight);
         if (hd.highCalorieFoodConsumption) setFAVC(hd.highCalorieFoodConsumption);
         if (hd.vegetableConsumption !== undefined) setFCVC(String(hd.vegetableConsumption));
@@ -234,7 +235,6 @@ export default function NewAssessment() {
         if (hd.technologyUsage !== undefined) setTUE(String(hd.technologyUsage));
         if (hd.transportationMethod) setMTRANS(hd.transportationMethod);
 
-        // Meal Plan Info (Preferences, Allergies, Medical Conditions, Dislikes)
         if (hd.dietaryPreference && hd.dietaryPreference !== 'None') setDietaryPreference(hd.dietaryPreference);
         if (hd.foodAllergies && hd.foodAllergies.length > 0) setFoodAllergies(hd.foodAllergies);
         if (hd.medicalConditions && hd.medicalConditions.length > 0) setMedicalConditions(hd.medicalConditions);
@@ -295,13 +295,11 @@ export default function NewAssessment() {
       setPredicting(true);
       setError('');
 
-      // Finalize allergies array with 'Other' if provided
       let finalAllergies = [...foodAllergies];
       if (finalAllergies.includes('Other') && otherAllergy.trim()) {
         finalAllergies = finalAllergies.map(a => a === 'Other' ? `Other: ${otherAllergy.trim()}` : a);
       }
 
-      // Convert Height
       const HeightInMeters = parseFloat(HeightCm) / 100;
 
       const payload = {
@@ -331,9 +329,6 @@ export default function NewAssessment() {
       };
 
       const response = await apiClient.post('/doctor/assessments/predict', payload);
-      
-      // We pass the prediction data directly to the result page via React Router state
-      // so the doctor can review it BEFORE saving to the DB.
       navigate('/doctor/assessments/preview', { state: { assessmentData: response.data.data } });
 
     } catch (err) {
@@ -347,332 +342,392 @@ export default function NewAssessment() {
   if (loading) {
     return (
       <DashboardLayout role="doctor">
-        <div className="p-12 text-center text-slate-500">Loading form...</div>
+        <div className="flex flex-col justify-center items-center h-80 text-slate-400 space-y-2">
+          <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs font-medium">Preparing assessment interface...</span>
+        </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout role="doctor">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/doctor/assessments" className="p-2 bg-white rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
-            <FaArrowLeft />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-[#172033]">New Assessment</h1>
-            <p className="text-sm text-[#64748B] mt-1">Run ML prediction for patient obesity outcomes.</p>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handlePredict} className="space-y-6">
+      <div className="space-y-6 pb-12">
         
-        {/* A. Patient Selection */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">A</span>
-            Patient Selection
-          </h2>
-          <div className="max-w-md">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Select Patient <span className="text-red-500">*</span></label>
-            <select 
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
-              required
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link 
+              to="/doctor/assessments" 
+              className="p-2.5 bg-white rounded-xl border border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-200 transition-colors shadow-2xs"
             >
-              <option value="">-- Select Assigned Patient --</option>
-              {patients.map(p => (
-                <option key={p._id} value={p._id}>
-                  {p.name} (ID: {p._id.substring(p._id.length - 6)})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {lastAssessmentDate && (
-            <div className="mt-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"></span>
-              <span>
-                <strong>Clinical History Loaded:</strong> Form has been automatically pre-filled with data from the previous assessment ({new Date(lastAssessmentDate).toLocaleDateString()}). You can review and update measurements (e.g. Current Weight) as needed.
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* B. Basic Measurements */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">B</span>
-            Basic Measurements
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Age <span className="text-red-500">*</span></label>
-              <input 
-                type="number" min="1" required placeholder="e.g. 30"
-                value={Age} onChange={(e) => setAge(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Gender <span className="text-red-500">*</span></label>
-              <select 
-                value={Gender} onChange={(e) => setGender(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Height (cm) <span className="text-red-500">*</span></label>
-              <input 
-                type="number" min="1" required placeholder="e.g. 175"
-                value={HeightCm} onChange={(e) => setHeightCm(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-              <p className="text-xs text-slate-500 mt-1">Will be converted to metres for the model automatically.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Weight (kg) <span className="text-red-500">*</span></label>
-              <input 
-                type="number" step="0.1" min="1" required placeholder="e.g. 75"
-                value={Weight} onChange={handleWeightChange}
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
-              />
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">New AI Obesity Assessment</h1>
+              <p className="text-xs text-slate-500 mt-0.5">Collect clinical lifestyle metrics and trigger Random Forest ML risk classification.</p>
             </div>
           </div>
         </div>
 
-        {/* C. Eating Habits */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">C</span>
-            Eating Habits
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">High-Calorie Food (FAVC) <span className="text-red-500">*</span></label>
-              <select value={FAVC} onChange={(e) => setFAVC(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Vegetable Consumption (FCVC) <span className="text-red-500">*</span></label>
-              <select value={FCVC} onChange={(e) => setFCVC(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="1">Rarely</option>
-                <option value="2">Sometimes</option>
-                <option value="3">Frequently</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Main Meals Per Day (NCP) <span className="text-red-500">*</span></label>
-              <select value={NCP} onChange={(e) => setNCP(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Food Between Meals (CAEC) <span className="text-red-500">*</span></label>
-              <select value={CAEC} onChange={(e) => setCAEC(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="no">Never</option>
-                <option value="Sometimes">Sometimes</option>
-                <option value="Frequently">Frequently</option>
-                <option value="Always">Always</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Daily Water Consumption (CH2O) <span className="text-red-500">*</span></label>
-              <select value={CH2O} onChange={(e) => setCH2O(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="1">Less than 1 litre</option>
-                <option value="2">Between 1 and 2 litres</option>
-                <option value="3">More than 2 litres</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Calorie Monitoring (SCC) <span className="text-red-500">*</span></label>
-              <select value={SCC} onChange={(e) => setSCC(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Alcohol Consumption (CALC) <span className="text-red-500">*</span></label>
-              <select value={CALC} onChange={(e) => setCALC(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="no">Never</option>
-                <option value="Sometimes">Sometimes</option>
-                <option value="Frequently">Frequently</option>
-                <option value="Always">Always</option>
-              </select>
-            </div>
+        {error && (
+          <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
           </div>
-        </div>
+        )}
 
-        {/* D. Lifestyle Information */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">D</span>
-            Lifestyle Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Family History of Overweight <span className="text-red-500">*</span></label>
-              <select value={family_history_with_overweight} onChange={(e) => setFamilyHistory(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Smoking Status (SMOKE) <span className="text-red-500">*</span></label>
-              <select value={SMOKE} onChange={(e) => setSMOKE(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Physical Activity (FAF) <span className="text-red-500">*</span></label>
-              <select value={FAF} onChange={(e) => setFAF(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="0">No regular physical activity</option>
-                <option value="1">Light physical activity</option>
-                <option value="2">Moderate physical activity</option>
-                <option value="3">High physical activity</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Technology Usage (TUE) <span className="text-red-500">*</span></label>
-              <select value={TUE} onChange={(e) => setTUE(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="0">0 to 2 hours</option>
-                <option value="1">3 to 5 hours</option>
-                <option value="2">More than 5 hours</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Transportation Method (MTRANS) <span className="text-red-500">*</span></label>
-              <select value={MTRANS} onChange={(e) => setMTRANS(e.target.value)} className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="Public_Transportation">Public Transportation</option>
-                <option value="Automobile">Automobile</option>
-                <option value="Walking">Walking</option>
-                <option value="Motorbike">Motorbike</option>
-                <option value="Bike">Bike</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Meal Plan Information */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">M</span>
-            Meal Plan Information <span className="text-xs font-normal text-slate-400 ml-2">(Not used for ML, saved for diet generation)</span>
-          </h2>
+        <form onSubmit={handlePredict} className="space-y-6">
           
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Dietary Preference</label>
-              <select value={dietaryPreference} onChange={(e) => setDietaryPreference(e.target.value)} className="w-full md:w-1/2 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="No Special Preference">No Special Preference</option>
-                <option value="Vegetarian">Vegetarian</option>
-                <option value="Vegan">Vegan</option>
+          {/* Section A: Patient Selection */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-xs border border-teal-100">
+                  A
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Patient Selection</h3>
+              </div>
+            </div>
+
+            <div className="max-w-md">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Select Assigned Patient <span className="text-rose-500">*</span>
+              </label>
+              <select 
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition cursor-pointer"
+                required
+              >
+                <option value="">-- Choose from Assigned Patients --</option>
+                {patients.map(p => (
+                  <option key={p._id} value={p._id}>
+                    {p.name} (#{p._id.slice(-6).toUpperCase()})
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Food Allergies</label>
-              <div className="flex flex-wrap gap-3">
-                {[
-                  'None',
-                  'Seafood / Shellfish',
-                  'Strong Fish Types & Maldive Fish',
-                  'Red Meats',
-                  'Acidic Fruits',
-                  'Certain Vegetables',
-                  'Milk & Dairy',
-                  'Egg',
-                  'Peanuts, Tree Nuts & Soy',
-                  'Gluten',
-                  'Other'
-                ].map(allergy => (
-                  <label key={allergy} className="inline-flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                      checked={foodAllergies.includes(allergy)}
-                      onChange={() => handleAllergyToggle(allergy)}
-                    />
-                    <span className="text-sm text-slate-700">{allergy}</span>
-                  </label>
-                ))}
+            {lastAssessmentDate && (
+              <div className="p-3.5 bg-teal-50/70 border border-teal-100 rounded-xl text-xs text-teal-800 flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>
+                  <strong>Clinical History Loaded:</strong> Form auto-populated from previous assessment ({new Date(lastAssessmentDate).toLocaleDateString()}). Please update current metrics (e.g., Weight).
+                </span>
               </div>
-              {foodAllergies.includes('Other') && (
+            )}
+          </div>
+
+          {/* Section B: Basic Measurements */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-xs border border-teal-100">
+                  B
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Basic Anthropometric Measurements</h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Age <span className="text-rose-500">*</span></label>
+                <input 
+                  type="number" min="1" max="120" required placeholder="e.g. 32"
+                  value={Age} onChange={(e) => setAge(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Gender <span className="text-rose-500">*</span></label>
+                <select 
+                  value={Gender} onChange={(e) => setGender(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Height in Centimetres (cm) <span className="text-rose-500">*</span></label>
+                <input 
+                  type="number" min="50" max="250" required placeholder="e.g. 175"
+                  value={HeightCm} onChange={(e) => setHeightCm(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Converted to metres for ML model automatically.</p>
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Weight in Kilograms (kg) <span className="text-rose-500">*</span></label>
+                <input 
+                  type="number" step="0.1" min="10" max="300" required placeholder="e.g. 78.5"
+                  value={Weight} onChange={handleWeightChange}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section C: Eating Habits */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-xs border border-teal-100">
+                  C
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Nutritional & Eating Habits</h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">High-Calorie Food Intake (FAVC) <span className="text-rose-500">*</span></label>
+                <select value={FAVC} onChange={(e) => setFAVC(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="yes">Frequent High-Calorie Intake (Yes)</option>
+                  <option value="no">Low / Controlled Intake (No)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Vegetables in Meals (FCVC) <span className="text-rose-500">*</span></label>
+                <select value={FCVC} onChange={(e) => setFCVC(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="1">Rarely / Never</option>
+                  <option value="2">Sometimes</option>
+                  <option value="3">Frequently / Every Meal</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Main Meals Per Day (NCP) <span className="text-rose-500">*</span></label>
+                <select value={NCP} onChange={(e) => setNCP(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="1">1 Main Meal</option>
+                  <option value="2">2 Main Meals</option>
+                  <option value="3">3 Main Meals (Standard)</option>
+                  <option value="4">4+ Main Meals</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Snacking Between Meals (CAEC) <span className="text-rose-500">*</span></label>
+                <select value={CAEC} onChange={(e) => setCAEC(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="no">Never / Rarely</option>
+                  <option value="Sometimes">Sometimes</option>
+                  <option value="Frequently">Frequently</option>
+                  <option value="Always">Always</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Water Intake (CH2O) <span className="text-rose-500">*</span></label>
+                <select value={CH2O} onChange={(e) => setCH2O(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="1">Less than 1 Litre</option>
+                  <option value="2">1 to 2 Litres</option>
+                  <option value="3">More than 2 Litres</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Calorie Monitoring (SCC) <span className="text-rose-500">*</span></label>
+                <select value={SCC} onChange={(e) => setSCC(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="yes">Yes (Monitors)</option>
+                  <option value="no">No (Does Not Monitor)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Alcohol Consumption (CALC) <span className="text-rose-500">*</span></label>
+                <select value={CALC} onChange={(e) => setCALC(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="no">Never / Non-Drinker</option>
+                  <option value="Sometimes">Sometimes</option>
+                  <option value="Frequently">Frequently</option>
+                  <option value="Always">Always</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section D: Lifestyle Information */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-xs border border-teal-100">
+                  D
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Lifestyle & Physical Factors</h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Family Overweight History <span className="text-rose-500">*</span></label>
+                <select value={family_history_with_overweight} onChange={(e) => setFamilyHistory(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="yes">Yes (Present in Family)</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Smoking Habit (SMOKE) <span className="text-rose-500">*</span></label>
+                <select value={SMOKE} onChange={(e) => setSMOKE(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="yes">Yes (Smoker)</option>
+                  <option value="no">No (Non-Smoker)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Physical Activity (FAF) <span className="text-rose-500">*</span></label>
+                <select value={FAF} onChange={(e) => setFAF(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="0">No Regular Physical Activity (0 days)</option>
+                  <option value="1">Light Physical Activity (1-2 days/week)</option>
+                  <option value="2">Moderate Physical Activity (3-4 days/week)</option>
+                  <option value="3">High Physical Activity (5+ days/week)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Screen & Tech Usage (TUE) <span className="text-rose-500">*</span></label>
+                <select value={TUE} onChange={(e) => setTUE(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="0">0 to 2 Hours Daily</option>
+                  <option value="1">3 to 5 Hours Daily</option>
+                  <option value="2">More than 5 Hours Daily</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Primary Commute (MTRANS) <span className="text-rose-500">*</span></label>
+                <select value={MTRANS} onChange={(e) => setMTRANS(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="Public_Transportation">Public Transportation (Bus / Train)</option>
+                  <option value="Automobile">Automobile / Car</option>
+                  <option value="Walking">Walking</option>
+                  <option value="Motorbike">Motorbike</option>
+                  <option value="Bike">Bicycle</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section E: Meal Plan Requirements */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-xs border border-teal-100">
+                  E
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Meal Plan & Dietary Constraints</h3>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Dietary Preference</label>
+                <select value={dietaryPreference} onChange={(e) => setDietaryPreference(e.target.value)} className="w-full md:w-1/2 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                  <option value="No Special Preference">No Special Preference</option>
+                  <option value="Vegetarian">Vegetarian</option>
+                  <option value="Vegan">Vegan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-2">Food Allergies</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    'None',
+                    'Seafood / Shellfish',
+                    'Strong Fish Types & Maldive Fish',
+                    'Red Meats',
+                    'Acidic Fruits',
+                    'Certain Vegetables',
+                    'Milk & Dairy',
+                    'Egg',
+                    'Peanuts, Tree Nuts & Soy',
+                    'Gluten',
+                    'Other'
+                  ].map(allergy => {
+                    const isChecked = foodAllergies.includes(allergy);
+                    return (
+                      <button
+                        key={allergy}
+                        type="button"
+                        onClick={() => handleAllergyToggle(allergy)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                          isChecked
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {allergy}
+                      </button>
+                    );
+                  })}
+                </div>
+                {foodAllergies.includes('Other') && (
+                  <input 
+                    type="text" 
+                    placeholder="Specify other allergy..." 
+                    value={otherAllergy}
+                    onChange={(e) => setOtherAllergy(e.target.value)}
+                    className="mt-2.5 w-full md:w-1/2 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none" 
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-2">Medical Conditions</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {['None', 'Diabetes', 'High Blood Pressure', 'High Cholesterol', 'Other'].map(condition => {
+                    const isChecked = medicalConditions.includes(condition);
+                    return (
+                      <button
+                        key={condition}
+                        type="button"
+                        onClick={() => handleMedicalToggle(condition)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                          isChecked
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {condition}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Disliked Foods (Optional)</label>
                 <input 
                   type="text" 
-                  placeholder="Specify other allergy" 
-                  value={otherAllergy}
-                  onChange={(e) => setOtherAllergy(e.target.value)}
-                  className="mt-3 w-full md:w-1/2 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500" 
+                  placeholder="e.g. mushrooms, broccoli, bitter gourd (comma separated)" 
+                  value={dislikedFoods}
+                  onChange={(e) => setDislikedFoods(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 outline-none" 
                 />
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Medical Conditions</label>
-              <div className="flex flex-wrap gap-3">
-                {['None', 'Diabetes', 'High Blood Pressure', 'High Cholesterol', 'Other'].map(condition => (
-                  <label key={condition} className="inline-flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                      checked={medicalConditions.includes(condition)}
-                      onChange={() => handleMedicalToggle(condition)}
-                    />
-                    <span className="text-sm text-slate-700">{condition}</span>
-                  </label>
-                ))}
               </div>
-              {medicalConditions.some(c => c !== 'None') && (
-                <p className="mt-2 text-xs font-medium text-amber-600 bg-amber-50 inline-block p-1.5 rounded border border-amber-200">
-                  Medical condition recorded. Doctor review is required before approving generated meal plans.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Disliked Foods (Optional)</label>
-              <input 
-                type="text" 
-                placeholder="E.g., mushrooms, broccoli, spicy food (comma separated)" 
-                value={dislikedFoods}
-                onChange={(e) => setDislikedFoods(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500" 
-              />
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-end gap-3 pb-8">
-          <Link to="/doctor/assessments" className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition-colors">
-            Cancel
-          </Link>
-          <button 
-            type="submit" 
-            disabled={predicting}
-            className="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-2"
-          >
-            {predicting ? 'Processing...' : <><FaStethoscope /> Run Prediction</>}
-          </button>
-        </div>
-      </form>
+          {/* Form Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <Link 
+              to="/doctor/assessments" 
+              className="px-5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </Link>
+            <button 
+              type="submit" 
+              disabled={predicting}
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {predicting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+              <span>{predicting ? 'Processing AI Model...' : 'Run Random Forest Prediction'}</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
     </DashboardLayout>
   );
 }
