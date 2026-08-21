@@ -1,147 +1,263 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  FaUserDoctor, 
-  FaUser, 
-  FaCalendarCheck, 
-  FaFileWaveform,
-  FaArrowTrendUp,
-  FaShieldHalved
-} from 'react-icons/fa6';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
+import SummaryCard from '../../components/dashboard/SummaryCard';
+import ChartPanel from '../../components/dashboard/ChartPanel';
+import EmptyState from '../../components/dashboard/EmptyState';
+import LoadingDashboard from '../../components/dashboard/LoadingDashboard';
+import DashboardError from '../../components/dashboard/DashboardError';
+import apiClient from '../../services/apiClient';
+
+import { FaUserDoctor, FaUsers, FaUserCheck, FaCalendarCheck, FaChartPie, FaChartLine, FaRegClock, FaCalendarDay } from 'react-icons/fa6';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const menuItems = [
-    { label: 'Dashboard', icon: FaShieldHalved, active: true, onClick: () => navigate('/admin/dashboard') },
-    { label: 'Doctors', icon: FaUserDoctor, onClick: () => navigate('/admin/doctors') },
-    { label: 'Patients', icon: FaUser, onClick: () => navigate('/admin/patients') },
-    { label: 'Appointments', icon: FaCalendarCheck, onClick: () => navigate('/admin/appointments') }
-  ];
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const cards = [
-    { title: 'Total Doctors', count: '24', change: '+2 new this week', icon: FaUserDoctor, color: 'from-blue-500 to-indigo-500' },
-    { title: 'Total Patients', count: '1,428', change: '+12% vs last month', icon: FaUser, color: 'from-sky-500 to-cyan-500' },
-    { title: 'Appointments', count: '382', change: '84 scheduled today', icon: FaCalendarCheck, color: 'from-teal-500 to-emerald-500' },
-    { title: 'Active Reports', count: '94', change: '24 pending approval', icon: FaFileWaveform, color: 'from-purple-500 to-pink-500' }
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiClient.get('/dashboard/admin');
+      setData(response.data.data);
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        setError(err.response?.data?.message || 'Failed to load dashboard data.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return <DashboardLayout role="admin"><LoadingDashboard /></DashboardLayout>;
+  }
+
+  if (error) {
+    return <DashboardLayout role="admin"><DashboardError message={error} onRetry={fetchDashboardData} /></DashboardLayout>;
+  }
+
+  if (!data) return null;
+
+  const { summary, obesityDistribution, monthlyAppointmentTrend, patientRegistrationTrend, recentRegistrations, recentAppointments } = data;
 
   return (
-    <DashboardLayout role="admin" menuItems={menuItems}>
-      <div className="space-y-6">
-        
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-            Welcome Admin 👋
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Obesity Registry Workspace • Today is {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
+    <DashboardLayout role="admin">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-[#172033]">Admin Overview</h1>
+        <p className="text-sm text-[#64748B] mt-1">Monitor clinical engagement and system utilization.</p>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cards.map((card, i) => {
-            const Icon = card.icon;
-            return (
-              <div 
-                key={i} 
-                className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.color}`} />
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                      {card.title}
-                    </span>
-                    <h3 className="text-3xl font-black mt-2 text-slate-900 dark:text-white">
-                      {card.count}
-                    </h3>
-                  </div>
-                  <div className={`p-3 rounded-2xl bg-gradient-to-tr ${card.color} text-white shadow-lg`}>
-                    <Icon className="text-lg" />
-                  </div>
-                </div>
+      {/* Summary Area */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+        <SummaryCard 
+          title="Total Doctors" 
+          value={summary.totalDoctors} 
+          icon={FaUserDoctor} 
+          colorClass="bg-[#E0E7FF] text-[#4F46E5]" 
+        />
+        <SummaryCard 
+          title="Total Patients" 
+          value={summary.totalPatients} 
+          icon={FaUsers} 
+          colorClass="bg-[#CCFBF1] text-[#0F766E]" 
+        />
+        <SummaryCard 
+          title="Active Patients" 
+          value={summary.activePatients} 
+          icon={FaUserCheck} 
+          colorClass="bg-[#DCFCE7] text-[#15803D]" 
+        />
+        <SummaryCard 
+          title="Pending Appts" 
+          value={summary.pendingAppointments} 
+          icon={FaRegClock} 
+          colorClass="bg-[#FEF3C7] text-[#B45309]" 
+        />
+        <SummaryCard 
+          title="Approved Appts" 
+          value={summary.approvedAppointments} 
+          icon={FaCalendarDay} 
+          colorClass="bg-[#DBEAFE] text-[#1D4ED8]" 
+        />
+        <SummaryCard 
+          title="Completed Appts" 
+          value={summary.completedAppointments} 
+          icon={FaCalendarCheck} 
+          colorClass="bg-[#F3E8FF] text-[#7E22CE]" 
+        />
+      </div>
 
-                <div className="flex items-center space-x-1.5 mt-4 text-[10px] text-slate-500 dark:text-slate-400">
-                  <FaArrowTrendUp className="text-emerald-500" />
-                  <span>{card.change}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {/* Analytics Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <ChartPanel title="Obesity Category Distribution">
+          {obesityDistribution && obesityDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={obesityDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {obesityDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState 
+              title="No Distribution Data" 
+              description="Clinical assessment data is not yet available to populate the obesity distribution."
+              icon={FaChartPie}
+            />
+          )}
+        </ChartPanel>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          
-          <div className="xl:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-sm tracking-wide">Registered Doctors Status</h3>
-              <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 cursor-pointer hover:underline">View All</span>
-            </div>
+        <ChartPanel title="Monthly Appointment Trend">
+          {monthlyAppointmentTrend && monthlyAppointmentTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyAppointmentTrend} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 12}} />
+                <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Bar dataKey="appointments" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState 
+              title="No Appointments Yet" 
+              description="The appointment module does not have any recorded data for the trend chart."
+              icon={FaChartLine}
+            />
+          )}
+        </ChartPanel>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold">
-                    <th className="pb-3 font-semibold">Doctor Name</th>
-                    <th className="pb-3 font-semibold">Specialty</th>
-                    <th className="pb-3 font-semibold">Active Patients</th>
-                    <th className="pb-3 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {[
-                    { name: 'Dr. Sarah Connor', spec: 'Endocrinology', patients: 84, status: 'Online', color: 'bg-emerald-500' },
-                    { name: 'Dr. John Watson', spec: 'General Nutrition', patients: 62, status: 'In Consultation', color: 'bg-amber-500' },
-                    { name: 'Dr. Elizabeth Shaw', spec: 'Metabolic Science', patients: 45, status: 'Offline', color: 'bg-slate-400' }
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
-                      <td className="py-3.5 font-bold flex items-center space-x-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold text-[10px]">
-                          {row.name.split(' ')[1][0]}
-                        </div>
-                        <span>{row.name}</span>
-                      </td>
-                      <td className="py-3.5 text-slate-500 dark:text-slate-400">{row.spec}</td>
-                      <td className="py-3.5 font-mono">{row.patients}</td>
-                      <td className="py-3.5">
-                        <span className="inline-flex items-center space-x-1.5">
-                          <span className={`w-1.5 h-1.5 rounded-full ${row.color}`} />
-                          <span>{row.status}</span>
+        <ChartPanel title="Patient Registration Trend">
+          {patientRegistrationTrend && patientRegistrationTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={patientRegistrationTrend} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B', fontSize: 12}} />
+                <Tooltip cursor={{stroke: '#CBD5E1', strokeWidth: 1}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Line type="monotone" dataKey="registrations" stroke="#0F766E" strokeWidth={3} dot={{r: 4, fill: '#0F766E', strokeWidth: 0}} activeDot={{r: 6}} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyState 
+              title="No Registrations Yet" 
+              description="Not enough data to map registration trends."
+              icon={FaChartLine}
+            />
+          )}
+        </ChartPanel>
+      </div>
+
+      {/* Tables Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-900">Recent Registrations</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-4 font-medium">Name</th>
+                  <th className="px-6 py-4 font-medium">Role</th>
+                  <th className="px-6 py-4 font-medium">Registration Date</th>
+                  <th className="px-6 py-4 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {recentRegistrations && recentRegistrations.length > 0 ? (
+                  recentRegistrations.map((user) => (
+                    <tr key={user._id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 font-medium text-slate-900">{user.fullName}</td>
+                      <td className="px-6 py-4 capitalize">{user.role}</td>
+                      <td className="px-6 py-4">{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
+                        }`}>
+                          {user.status || 'Active'}
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                      No recent registrations found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-
-          <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-6 shadow-sm">
-            <h3 className="font-bold text-sm tracking-wide mb-6">System Health Log</h3>
-            <div className="space-y-4">
-              {[
-                { log: 'Database backup successfully uploaded', time: '10 mins ago', type: 'success' },
-                { log: 'Statistical risk model v3 updated', time: '1 hour ago', type: 'info' },
-                { log: 'Server resource peak: CPU usage at 78%', time: '2 hours ago', type: 'warning' }
-              ].map((log, i) => (
-                <div key={i} className="flex items-start space-x-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/30">
-                  <span className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
-                    log.type === 'success' ? 'bg-emerald-500' : log.type === 'warning' ? 'bg-rose-500' : 'bg-sky-500'
-                  }`} />
-                  <div>
-                    <p className="text-xs font-semibold leading-relaxed text-slate-700 dark:text-slate-300">{log.log}</p>
-                    <span className="text-[10px] text-slate-400 mt-1 block">{log.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
 
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+          <div className="px-6 py-5 border-b border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-900">Recent Appointments</h3>
+          </div>
+          <div className="flex-1 overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-4 font-medium">Patient</th>
+                  <th className="px-6 py-4 font-medium">Doctor</th>
+                  <th className="px-6 py-4 font-medium">Date</th>
+                  <th className="px-6 py-4 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {recentAppointments && recentAppointments.length > 0 ? (
+                  recentAppointments.map((appt) => (
+                    <tr key={appt._id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 font-medium text-slate-900">{appt.patientId?.fullName || 'Unknown'}</td>
+                      <td className="px-6 py-4">{appt.doctorId?.fullName || 'Unknown'}</td>
+                      <td className="px-6 py-4">
+                        <span className="block">{new Date(appt.date).toLocaleDateString()}</span>
+                        <span className="block text-xs text-slate-500">{appt.time}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
+                          appt.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                          appt.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
+                          'bg-slate-100 text-slate-800'
+                        }`}>
+                          {appt.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                      No recent appointments found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
     </DashboardLayout>
   );
 }

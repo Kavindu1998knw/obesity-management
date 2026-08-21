@@ -33,3 +33,45 @@
 .animate-float-fast {
   animation: float 3s ease-in-out infinite;
 }
+
+@media print {
+  /* Hide unnecessary elements during print */
+  .no-print, nav, aside, footer, button, .sidebar, .navbar {
+    display: none !important;
+  }
+  
+  /* Reset background and colors for printing */
+  body, .print-container {
+    background-color: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Expand main content */
+  main {
+    margin-left: 0 !important;
+    padding: 20px !important;
+    width: 100% !important;
+  }
+
+  /* Remove shadows and borders */
+  * {
+    box-shadow: none !important;
+  }
+  
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-table th, .print-table td {
+    border: 1px solid #ddd !important;
+    padding: 8px !important;
+  }
+
+  .print-table th {
+    background-color: #f8f9fa !important;
+    color: #000 !important;
+  }
+}

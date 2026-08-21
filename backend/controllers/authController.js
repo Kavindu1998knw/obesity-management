@@ -4,85 +4,66 @@ import jwt from 'jsonwebtoken';
 
 export const registerUser = async (req, res) => {
   try {
-    const { fullName, email, password, role, dob, gender } = req.body;
+    const { fullName, email, password, dob, gender } = req.body;
 
-    if (!fullName || !email || !password || !role) {
+    if (!fullName || !email || !password || !dob || !gender) {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
+    }
+
+    const trimmedFullName = fullName.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      return res.status(400).json({ success: false, message: 'Invalid email format.' });
     }
 
     if (password.length < 8) {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
     }
 
-    if (!['patient', 'doctor', 'admin'].includes(role)) {
-      return res.status(400).json({ success: false, message: 'Invalid role.' });
+    const dobDate = new Date(dob);
+    const today = new Date();
+    if (dobDate > today) {
+      return res.status(400).json({ success: false, message: 'Date of birth cannot be in the future.' });
     }
 
-    if (role === 'patient' && (!dob || !gender)) {
-      return res.status(400).json({ success: false, message: 'Date of Birth and Gender are required.' });
+    const allowedGenders = ['Male', 'Female', 'Other'];
+    if (!allowedGenders.includes(gender)) {
+      return res.status(400).json({ success: false, message: 'Invalid gender.' });
     }
 
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: new RegExp(`^${trimmedEmail}$`, 'i') });
     if (existing) {
       return res.status(400).json({ success: false, message: 'Email already registered.' });
     }
 
-    const user = new User({ fullName, email, password, role });
+    // Force role to 'patient' regardless of request body
+    const user = new User({ 
+      fullName: trimmedFullName, 
+      email: trimmedEmail, 
+      password, 
+      role: 'patient' 
+    });
     await user.save();
 
     // Create a Patient profile document if user registered as patient
-    if (role === 'patient') {
-      const weight = Math.round(55 + Math.random() * 65); // 55-120 kg
-      const height = Math.round(150 + Math.random() * 35); // 150-185 cm
-      const bmi = parseFloat((weight / ((height / 100) ** 2)).toFixed(1));
-      
-      let latestPrediction = 'Normal Weight';
-      let riskScore = Math.round(10 + Math.random() * 40);
-      
-      if (bmi >= 40) {
-        latestPrediction = 'Obesity Class III';
-        riskScore = Math.round(80 + Math.random() * 15);
-      } else if (bmi >= 35) {
-        latestPrediction = 'Obesity Class II';
-        riskScore = Math.round(65 + Math.random() * 15);
-      } else if (bmi >= 30) {
-        latestPrediction = 'Obesity Class I';
-        riskScore = Math.round(45 + Math.random() * 20);
-      } else if (bmi >= 25) {
-        latestPrediction = 'Overweight';
-        riskScore = Math.round(25 + Math.random() * 20);
-      } else if (bmi < 18.5) {
-        latestPrediction = 'Underweight';
-        riskScore = Math.round(15 + Math.random() * 15);
-      }
-      
-      const mealPlans = [
-        'Low-Carb Ketogenic Diet',
-        'Calorie-Restricted Balanced Diet',
-        'High-Protein/Low-Glycemic Diet',
-        'Mediterranean Heart-Healthy Diet',
-        'Intermittent Fasting Protocol'
-      ];
-      
-      const latestMealPlan = bmi >= 25 
-        ? mealPlans[Math.floor(Math.random() * 3)] 
-        : mealPlans[3 + Math.floor(Math.random() * 2)];
-
+    // Create a Patient profile document
+    try {
       const patientProfile = new Patient({
         userId: user._id,
         phoneNumber: '',
-        dob: dob || null,
-        gender: gender || '',
-        medicalHistory: '',
-        assignedDoctorId: null,
-        latestWeight: weight,
-        latestHeight: height,
-        latestBmi: bmi,
-        latestPrediction,
-        riskScore,
-        latestMealPlan
+        dob: dobDate,
+        gender: gender,
+        medicalHistory: ''
       });
       await patientProfile.save();
+    } catch (profileErr) {
+      // Rollback user creation to avoid orphaned users
+      await User.findByIdAndDelete(user._id);
+      console.error('Error creating patient profile:', profileErr);
+      return res.status(500).json({ success: false, message: 'Registration failed during profile creation.' });
     }
 
     res.status(201).json({ success: true, message: 'Account created successfully.' });
@@ -100,7 +81,9 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
-    const user = await User.findOne({ email });
+    const trimmedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: trimmedEmail });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
@@ -114,10 +97,12 @@ export const loginUser = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Your account is deactivated. Please contact an admin.' });
     }
 
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn }
     );
 
     res.status(200).json({
@@ -132,5 +117,46 @@ export const loginUser = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Login failed.' });
+  }
+};
+
+// POST /api/auth/reset-password
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Token and new password are required.' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long.' });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password reset link is invalid or has expired. Please contact the administrator.',
+      });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password has been changed successfully. You can now log in with your new password.',
+    });
+  } catch (error) {
+    console.error('Reset Password Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to reset password.' });
   }
 };

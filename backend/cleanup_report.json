@@ -1,0 +1,42 @@
+{
+  "recoveryDir": "G:\\Project\\database-recovery\\phase2-test-cleanup-20260818-1454",
+  "exports": {
+    "users_test_doctors.json": 6,
+    "users_test_patients.json": 6,
+    "patients_profiles.json": 6,
+    "assessments.json": 3,
+    "doctors_orphan_profile.json": 1
+  },
+  "assertions": [
+    "✅ Genuine doctors verified",
+    "✅ Test doctors verified",
+    "✅ Test patients verified",
+    "✅ Test patient profiles verified",
+    "✅ Test assessments verified",
+    "✅ Orphan doctor profile verified",
+    "✅ No unexpected related data found",
+    "✅ Exports verified as non-empty",
+    "✅ Deletions completed and verified"
+  ],
+  "transactionResult": "Committed",
+  "deletedCounts": {
+    "assessments": 3,
+    "patients": 6,
+    "patientUsers": 6,
+    "doctorUsers": 6,
+    "orphanDoctor": 1
+  },
+  "postCleanupCounts": {
+    "genuineDoctorUsers": 2,
+    "doctorProfiles": 0,
+    "testDoctorUsers": 0,
+    "testPatientUsers": 0,
+    "testPatientProfiles": 0,
+    "testAssessments": 0,
+    "orphanDoctorProfile": 0,
+    "mealTemplates": 34,
+    "totalUsers": 8
+  },
+  "genuineUnchanged": true,
+  "unexpectedDeletedCount": 0
+}

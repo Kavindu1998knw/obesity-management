@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import {
   FaEnvelope,
   FaLock,
@@ -25,10 +25,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired')) {
+      setError('Your session has expired. Please log in again.');
+    }
+    if (params.get('inactive')) {
+      setError(params.get('message') || 'Your account is deactivated.');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +50,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+      const { data } = await apiClient.post('/auth/login', {
         email,
         password,
       });
@@ -111,9 +120,6 @@ export default function LoginPage() {
               <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Password
               </label>
-              <a href="#forgot-password" className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline transition-all">
-                Forgot password?
-              </a>
             </div>
             <div className="relative group">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 group-focus-within:text-sky-500 transition-colors">
@@ -138,19 +144,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Remember Me */}
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-white/40 dark:border-slate-800 bg-white/30 dark:bg-slate-950/40 text-sky-500 focus:ring-sky-500/30 focus:ring-offset-0 focus:outline-none cursor-pointer"
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-              Remember this device for 30 days
-            </label>
-          </div>
+
 
           {/* Error */}
           <AnimatePresence>

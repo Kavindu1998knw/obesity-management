@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import apiClient from '../services/apiClient';
 import { 
   FaUser, 
   FaUserDoctor, 
@@ -21,7 +21,6 @@ import AuthLayout from '../layouts/AuthLayout';
 export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState('patient');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
@@ -37,7 +36,7 @@ export default function RegisterPage() {
   useEffect(() => {
     setValidationError('');
     setSubmitSuccess(false);
-  }, [role, password, confirmPassword, email, fullName, dob, gender]);
+  }, [password, confirmPassword, email, fullName, dob, gender]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,11 +60,10 @@ export default function RegisterPage() {
     setValidationError('');
     
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
+      const response = await apiClient.post('/auth/register', {
         fullName,
         email,
         password,
-        role,
         dob,
         gender
       });

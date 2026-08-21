@@ -9,21 +9,17 @@ const DoctorSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     trim: true,
+    default: '',
   },
-  licenseNumber: {
+  specialisation: {
     type: String,
-    required: [true, 'Medical License Number is required'],
     trim: true,
+    default: '',
   },
-  department: {
+  qualification: {
     type: String,
-    required: [true, 'Department is required'],
     trim: true,
-  },
-  specialization: {
-    type: String,
-    required: [true, 'Specialization is required'],
-    trim: true,
+    default: '',
   },
   createdAt: {
     type: Date,

@@ -3,48 +3,70 @@ import mongoose from 'mongoose';
 const AppointmentSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Patient',
-    required: [true, 'Patient reference is required']
+    ref: 'User',
+    required: true
   },
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Doctor',
-    required: [true, 'Doctor reference is required']
+    ref: 'User',
+    required: true
   },
-  department: {
-    type: String,
-    required: [true, 'Department is required'],
-    trim: true
-  },
-  appointmentDate: {
+  date: {
     type: Date,
-    required: [true, 'Appointment date is required']
+    required: true
   },
-  appointmentTime: {
+  time: {
     type: String,
-    required: [true, 'Appointment time is required'],
-    trim: true
+    required: true
   },
-  reasonForVisit: {
+  reason: {
     type: String,
-    required: [true, 'Reason for visit is required'],
-    trim: true
+    trim: true,
+    maxlength: 500
+  },
+  patientNote: {
+    type: String,
+    trim: true,
+    maxlength: 1000
   },
   status: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'],
-    default: 'Pending'
+    enum: ['pending', 'completed', 'cancelled', 'approved', 'rejected'],
+    default: 'pending'
   },
-  notes: {
+  rejectionReason: {
     type: String,
-    default: '',
-    trim: true
+    trim: true,
+    maxlength: 1000
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  cancellationReason: {
+    type: String,
+    trim: true,
+    maxlength: 1000
+  },
+  rescheduleNote: {
+    type: String,
+    trim: true,
+    maxlength: 1000
+  },
+  adminNote: {
+    type: String,
+    trim: true,
+    maxlength: 1000
+  },
+  consultationNote: {
+    type: String,
+    trim: true,
+    maxlength: 2000
+  },
+  followUpRequired: {
+    type: Boolean,
+    default: false
+  },
+  suggestedFollowUpDate: {
+    type: Date
   }
-});
+}, { timestamps: true });
 
 const Appointment = mongoose.model('Appointment', AppointmentSchema);
 export default Appointment;

@@ -6,7 +6,8 @@
     "install-all": "npm install --prefix backend && npm install --prefix frontend",
     "dev-backend": "npm run dev --prefix backend",
     "dev-frontend": "npm run dev --prefix frontend",
-    "dev": "concurrently \"npm run dev-backend\" \"npm run dev-frontend\""
+    "dev-ml": "python ml-service/app.py",
+    "dev": "concurrently -n \"BACKEND,FRONTEND,ML\" -c \"blue,magenta,green\" \"npm run dev-backend\" \"npm run dev-frontend\" \"npm run dev-ml\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
