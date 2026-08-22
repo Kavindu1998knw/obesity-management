@@ -229,37 +229,37 @@ erDiagram
 ```mermaid
 graph LR
     subgraph Primary_Actors [Primary Actors]
-        Admin((System Admin))
-        Doctor((Clinician / Doctor))
-        Patient((Patient))
+        Admin(["System Admin"])
+        Doctor(["Clinician / Doctor"])
+        Patient(["Patient"])
     end
 
     subgraph System_Boundary [Obesity Management System - Core Use Cases]
-        UC_Auth([UC-01: Authenticate User / Login])
-        UC_Reset([UC-02: Reset Password])
+        UC_Auth(["UC-01: Authenticate User / Login"])
+        UC_Reset(["UC-02: Reset Password"])
         
-        UC_DocMgmt([UC-03: Manage Doctor Profiles])
-        UC_PatAssign([UC-04: Assign Doctor to Patient])
-        UC_ApptApprove([UC-05: Approve / Reschedule Appointment])
-        UC_SysReports([UC-06: Generate System Audit Reports])
+        UC_DocMgmt(["UC-03: Manage Doctor Profiles"])
+        UC_PatAssign(["UC-04: Assign Doctor to Patient"])
+        UC_ApptApprove(["UC-05: Approve / Reschedule Appointment"])
+        UC_SysReports(["UC-06: Generate System Audit Reports"])
         
-        UC_ViewDossier([UC-07: Review Patient Clinical Dossier])
-        UC_UpdateHealth([UC-08: Update 17 Lifestyle Parameters])
-        UC_MLPredict([UC-09: Execute ML Obesity Risk Prediction])
-        UC_SaveAssess([UC-10: Save Verified Assessment])
-        UC_GenMeal([UC-11: Generate Sri Lankan Meal Plan])
-        UC_SubMeal([UC-12: Substitute Meal Template Slot])
-        UC_ApproveMeal([UC-13: Approve Meal Plan & Complete Appt])
-        UC_DocNotes([UC-14: Manage Clinical Notes])
+        UC_ViewDossier(["UC-07: Review Patient Clinical Dossier"])
+        UC_UpdateHealth(["UC-08: Update 17 Lifestyle Parameters"])
+        UC_MLPredict(["UC-09: Execute ML Obesity Risk Prediction"])
+        UC_SaveAssess(["UC-10: Save Verified Assessment"])
+        UC_GenMeal(["UC-11: Generate Sri Lankan Meal Plan"])
+        UC_SubMeal(["UC-12: Substitute Meal Template Slot"])
+        UC_ApproveMeal(["UC-13: Approve Meal Plan & Complete Appt"])
+        UC_DocNotes(["UC-14: Manage Clinical Notes"])
         
-        UC_BookAppt([UC-15: Request Consultation Appointment])
-        UC_TrackProg([UC-16: Log Weight & Adherence Progress])
-        UC_ViewMeal([UC-17: View Approved Meal Guidelines])
-        UC_PatReport([UC-18: Download Personal Health Report])
+        UC_BookAppt(["UC-15: Request Consultation Appointment"])
+        UC_TrackProg(["UC-16: Log Weight & Adherence Progress"])
+        UC_ViewMeal(["UC-17: View Approved Meal Guidelines"])
+        UC_PatReport(["UC-18: Download Personal Health Report"])
     end
 
     subgraph Secondary_Actors [Secondary Actors]
-        ML_Service((Flask ML Microservice))
+        ML_Service(["Flask ML Microservice"])
     end
 
     Admin --> UC_Auth
@@ -512,21 +512,21 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Start([Start Meal Curation Engine]) --> Step1[1. Query Master Library: Filter templates where isActive == true]
-    Step1 --> Step2[2. Clinical Match: Filter suitableFor containing Patient ObesityClass]
-    Step2 --> Step3{3. Dietary Preference Check}
-    Step3 -->|Vegan| VeganFilter[Select dietaryTypes == 'Vegan']
-    Step3 -->|Vegetarian| VegFilter[Select dietaryTypes IN ('Vegetarian', 'Vegan')]
-    Step3 -->|No Preference| AllDiet[Allow All Dietary Types]
+    Start(["Start Meal Curation Engine"]) --> Step1["1. Query Master Library: Filter templates where isActive == true"]
+    Step1 --> Step2["2. Clinical Match: Filter suitableFor containing Patient ObesityClass"]
+    Step2 --> Step3{"3. Dietary Preference Check"}
+    Step3 -->|Vegan| VeganFilter["Select dietaryTypes == 'Vegan'"]
+    Step3 -->|Vegetarian| VegFilter["Select dietaryTypes IN ('Vegetarian', 'Vegan')"]
+    Step3 -->|No Preference| AllDiet["Allow All Dietary Types"]
     
-    VeganFilter --> Step4[4. Safety Filter: Strip dishes matching Patient Allergens or Disliked Foods]
+    VeganFilter --> Step4["4. Safety Filter: Strip dishes matching Patient Allergens or Disliked Foods"]
     VegFilter --> Step4
     AllDiet --> Step4
     
-    Step4 --> SplitSlots[5. Divide Daily Calorie Target into 4 Slots:<br/>Breakfast: 25% | Lunch: 35% | Dinner: 30% | Snack: 10%]
-    SplitSlots --> Proximity[Select Template for each slot that minimizes |Calories - Target Slot Calories|]
-    Proximity --> CompilePlan[Compile 4-Slot Meal Plan with Macronutrient Totals]
-    CompilePlan --> End([Render Suggested Plan to Clinician])
+    Step4 --> SplitSlots["5. Divide Daily Calorie Target into 4 Slots:<br/>Breakfast: 25% | Lunch: 35% | Dinner: 30% | Snack: 10%"]
+    SplitSlots --> Proximity["Select Template for each slot that minimizes calorie delta to target slot"]
+    Proximity --> CompilePlan["Compile 4-Slot Meal Plan with Macronutrient Totals"]
+    CompilePlan --> End(["Render Suggested Plan to Clinician"])
 ```
 
 ---
