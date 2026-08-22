@@ -13,7 +13,6 @@
 [![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas_8.16-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose_v2-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![OpenAPI 3.0](https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?logo=swagger&logoColor=black)](http://localhost:5000/api-docs)
-[![License](https://img.shields.io/badge/License-Academic_Research-blue.svg)](LICENSE)
 
 <p align="center">
   <strong>Final-Year Software Engineering Degree Project</strong><br>
@@ -22,6 +21,7 @@
 
 <p align="center">
   <a href="#-system-architecture">Architecture</a> &bull;
+  <a href="#-comprehensive-system-diagrams-uml--architectural-blueprints">System Diagrams (UML)</a> &bull;
   <a href="#-core-modules--features">Features</a> &bull;
   <a href="#-machine-learning-intelligence-tier">Machine Learning</a> &bull;
   <a href="#-nutritional--clinical-energy-engine">Nutritional Engine</a> &bull;
@@ -52,20 +52,20 @@ The application is structured as a decoupled, containerized three-tier microserv
 
 ```mermaid
 graph TD
-    subgraph Presentation Tier [Client Tier - Port 3000 / 5173]
+    subgraph Presentation_Tier [Client Tier - Port 3000 / 5173]
         SPA["React 19 SPA<br/>Vite 8 &bull; Tailwind CSS v4 &bull; Recharts<br/>Nginx 1.27 Alpine Reverse Proxy"]
     end
 
-    subgraph Application Tier [API Gateway - Port 5000]
+    subgraph Application_Tier [API Gateway - Port 5000]
         API["Node.js 20 / Express 5.1 REST API<br/>JWT Authentication &bull; RBAC Middleware<br/>Swagger OpenAPI 3.0 (/api-docs)"]
         EMAIL["Nodemailer Service<br/>(SMTP / Gmail / JSON Fallback)"]
     end
 
-    subgraph Intelligence Tier [ML Microservice - Port 5001]
+    subgraph Intelligence_Tier [ML Microservice - Port 5001]
         FLASK["Python 3.11 / Flask 3.1 Service<br/>ColumnTransformer Preprocessing<br/>Random Forest Pipeline (19.5 MB .joblib)"]
     end
 
-    subgraph Persistence Tier [Data Tier - Cloud]
+    subgraph Persistence_Tier [Data Tier - Cloud]
         MONGO[("MongoDB Atlas Cloud Cluster<br/>(Mongoose 8.16 ODM &bull; 9 Schemas)")]
     end
 
@@ -73,6 +73,579 @@ graph TD
     API --> EMAIL
     API -->|Synchronous HTTP POST /predict| FLASK
     API -->|Mongoose BSON &bull; ACID Transactions| MONGO
+```
+
+---
+
+## 📐 Comprehensive System Diagrams (UML & Architectural Blueprints)
+
+### 1. Entity-Relationship (ER) Diagram (9 Mongoose Models)
+
+```mermaid
+erDiagram
+    USER ||--|| PATIENT : "has profile (userId)"
+    USER ||--|| DOCTOR : "has profile (userId)"
+    USER ||--o{ APPOINTMENT : "patientId / doctorId"
+    USER ||--o{ ASSESSMENT : "patientId / doctorId"
+    USER ||--o{ MEALPLAN : "patientId / doctorId"
+    USER ||--o{ DOCTORNOTE : "patientId / doctorId"
+    USER ||--o{ PROGRESSRECORD : "patientId"
+    ASSESSMENT ||--|| MEALPLAN : "assessmentId"
+    MEALTEMPLATE ||--o{ MEALPLAN : "cloned into meals[]"
+
+    USER {
+        ObjectId _id PK
+        string fullName
+        string email UK
+        string password
+        string role "admin | doctor | patient"
+        string status "active | inactive"
+        string resetPasswordToken
+        date resetPasswordExpires
+        date createdAt
+    }
+
+    PATIENT {
+        ObjectId _id PK
+        ObjectId userId FK
+        string phoneNumber
+        ObjectId assignedDoctor FK
+        date assignedDoctorAt
+        number height
+        number weight
+        number currentBmi
+        date dob
+        string gender
+        string medicalHistory
+        boolean profileCompleted
+        string onboardingStatus
+        object healthDetails "17 lifestyle features"
+        date createdAt
+    }
+
+    DOCTOR {
+        ObjectId _id PK
+        ObjectId userId FK
+        string phoneNumber
+        string specialisation
+        string qualification
+        date createdAt
+    }
+
+    APPOINTMENT {
+        ObjectId _id PK
+        ObjectId patientId FK
+        ObjectId doctorId FK
+        date date
+        string time
+        string status "pending | approved | rejected | completed | cancelled"
+        string reason
+        string patientNote
+        string consultationNote
+        string rejectionReason
+        string cancellationReason
+        string rescheduleNote
+        boolean followUpRequired
+        date suggestedFollowUpDate
+    }
+
+    ASSESSMENT {
+        ObjectId _id PK
+        ObjectId patientId FK
+        ObjectId doctorId FK
+        number height
+        number weight
+        number bmi
+        object inputs "17 ML parameters"
+        string obesityClass "7 WHO Classes"
+        number confidenceScore
+        array topProbabilities
+        string doctorNote
+        boolean isApproved
+        date createdAt
+    }
+
+    MEALTEMPLATE {
+        ObjectId _id PK
+        string name UK
+        string mealType "Breakfast | Lunch | Dinner | Snack"
+        number calories
+        number protein
+        number carbohydrates
+        number fat
+        number fiber
+        array ingredients
+        array dietaryTypes
+        array allergens "9 SL Categories"
+        array suitableFor "7 WHO Classes"
+        boolean isActive
+    }
+
+    MEALPLAN {
+        ObjectId _id PK
+        ObjectId patientId FK
+        ObjectId doctorId FK
+        ObjectId assessmentId FK
+        string obesityClass
+        number bmr
+        number tdee
+        number dailyCalorieTarget
+        array meals "4 meal slot snapshots"
+        string dietaryPreference
+        array allergies
+        string waterTarget
+        string foodsToAvoid
+        string exerciseRecommendation
+        string doctorInstructions
+        string status "Draft | Approved"
+        date approvedAt
+    }
+
+    DOCTORNOTE {
+        ObjectId _id PK
+        ObjectId patientId FK
+        ObjectId doctorId FK
+        string note
+        date createdAt
+    }
+
+    PROGRESSRECORD {
+        ObjectId _id PK
+        ObjectId patientId FK
+        number weight
+        number bmi
+        string mealAdherence
+        string physicalActivity
+        string note
+        date date
+        date createdAt
+    }
+```
+
+---
+
+### 2. System Use Case Diagram
+
+```mermaid
+graph LR
+    subgraph Primary_Actors [Primary Actors]
+        Admin((System Admin))
+        Doctor((Clinician / Doctor))
+        Patient((Patient))
+    end
+
+    subgraph System_Boundary [Obesity Management System - Core Use Cases]
+        UC_Auth([UC-01: Authenticate User / Login])
+        UC_Reset([UC-02: Reset Password])
+        
+        UC_DocMgmt([UC-03: Manage Doctor Profiles])
+        UC_PatAssign([UC-04: Assign Doctor to Patient])
+        UC_ApptApprove([UC-05: Approve / Reschedule Appointment])
+        UC_SysReports([UC-06: Generate System Audit Reports])
+        
+        UC_ViewDossier([UC-07: Review Patient Clinical Dossier])
+        UC_UpdateHealth([UC-08: Update 17 Lifestyle Parameters])
+        UC_MLPredict([UC-09: Execute ML Obesity Risk Prediction])
+        UC_SaveAssess([UC-10: Save Verified Assessment])
+        UC_GenMeal([UC-11: Generate Sri Lankan Meal Plan])
+        UC_SubMeal([UC-12: Substitute Meal Template Slot])
+        UC_ApproveMeal([UC-13: Approve Meal Plan & Complete Appt])
+        UC_DocNotes([UC-14: Manage Clinical Notes])
+        
+        UC_BookAppt([UC-15: Request Consultation Appointment])
+        UC_TrackProg([UC-16: Log Weight & Adherence Progress])
+        UC_ViewMeal([UC-17: View Approved Meal Guidelines])
+        UC_PatReport([UC-18: Download Personal Health Report])
+    end
+
+    subgraph Secondary_Actors [Secondary Actors]
+        ML_Service((Flask ML Microservice))
+    end
+
+    Admin --> UC_Auth
+    Admin --> UC_DocMgmt
+    Admin --> UC_PatAssign
+    Admin --> UC_ApptApprove
+    Admin --> UC_SysReports
+
+    Doctor --> UC_Auth
+    Doctor --> UC_ViewDossier
+    Doctor --> UC_UpdateHealth
+    Doctor --> UC_MLPredict
+    Doctor --> UC_SaveAssess
+    Doctor --> UC_GenMeal
+    Doctor --> UC_SubMeal
+    Doctor --> UC_ApproveMeal
+    Doctor --> UC_DocNotes
+
+    Patient --> UC_Auth
+    Patient --> UC_Reset
+    Patient --> UC_BookAppt
+    Patient --> UC_TrackProg
+    Patient --> UC_ViewMeal
+    Patient --> UC_PatReport
+
+    UC_MLPredict -.->|<<invokes>>| ML_Service
+    UC_SaveAssess -.->|<<extends>>| UC_MLPredict
+    UC_ApproveMeal -.->|<<includes>>| UC_GenMeal
+```
+
+---
+
+### 3. Domain Class Diagram (Models & Core Controllers)
+
+```mermaid
+classDiagram
+    class User {
+        -ObjectId _id
+        +string fullName
+        +string email
+        -string password
+        +string role
+        +string status
+        +string resetPasswordToken
+        +Date resetPasswordExpires
+        +Date createdAt
+        +matchPassword(enteredPassword: string) boolean
+    }
+
+    class Patient {
+        -ObjectId _id
+        +ObjectId userId
+        +string phoneNumber
+        +ObjectId assignedDoctor
+        +Date assignedDoctorAt
+        +number height
+        +number weight
+        +number currentBmi
+        +Date dob
+        +string gender
+        +string medicalHistory
+        +boolean profileCompleted
+        +object healthDetails
+    }
+
+    class Doctor {
+        -ObjectId _id
+        +ObjectId userId
+        +string phoneNumber
+        +string specialisation
+        +string qualification
+        +Date createdAt
+    }
+
+    class Appointment {
+        -ObjectId _id
+        +ObjectId patientId
+        +ObjectId doctorId
+        +Date date
+        +string time
+        +string status
+        +string reason
+        +string consultationNote
+        +boolean followUpRequired
+        +Date suggestedFollowUpDate
+    }
+
+    class Assessment {
+        -ObjectId _id
+        +ObjectId patientId
+        +ObjectId doctorId
+        +number height
+        +number weight
+        +number bmi
+        +object inputs
+        +string obesityClass
+        +number confidenceScore
+        +Array topProbabilities
+        +string doctorNote
+        +boolean isApproved
+    }
+
+    class MealPlan {
+        -ObjectId _id
+        +ObjectId patientId
+        +ObjectId doctorId
+        +ObjectId assessmentId
+        +string obesityClass
+        +number bmr
+        +number tdee
+        +number dailyCalorieTarget
+        +Array meals
+        +string dietaryPreference
+        +string waterTarget
+        +string status
+        +Date approvedAt
+    }
+
+    class MealTemplate {
+        -ObjectId _id
+        +string name
+        +string mealType
+        +number calories
+        +number protein
+        +number carbohydrates
+        +number fat
+        +number fiber
+        +Array ingredients
+        +Array allergens
+        +Array suitableFor
+        +boolean isActive
+    }
+
+    class ProgressRecord {
+        -ObjectId _id
+        +ObjectId patientId
+        +number weight
+        +number bmi
+        +string mealAdherence
+        +string physicalActivity
+        +string note
+        +Date date
+    }
+
+    User "1" <|-- "1" Patient : profile
+    User "1" <|-- "1" Doctor : profile
+    User "1" <-- "0..*" Appointment : patientId / doctorId
+    User "1" <-- "0..*" Assessment : patientId / doctorId
+    Assessment "1" <-- "1" MealPlan : assessmentId
+    MealTemplate "1..*" <-- "1" MealPlan : snapshots in meals[]
+    User "1" <-- "0..*" ProgressRecord : patientId
+```
+
+---
+
+### 4. Sequence Diagrams (Core Workflows)
+
+#### A. Sequence Diagram: Authentication & Session Verification
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client (Browser)
+    participant API as Express API (/api/auth)
+    participant DB as MongoDB Atlas
+
+    User->>API: POST /api/auth/login { email, password }
+    API->>DB: User.findOne({ email }).select('+password')
+    DB-->>API: User Document (bcrypt hash)
+    
+    alt Invalid Password
+        API->>API: bcrypt.compare() == false
+        API-->>User: HTTP 401 { success: false, message: "Invalid credentials" }
+    else Valid Password & Deactivated Status
+        API->>API: user.status === 'inactive'
+        API-->>User: HTTP 403 { success: false, message: "Account deactivated" }
+    else Valid Credentials & Active Status
+        API->>API: jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' })
+        API-->>User: HTTP 200 { success: true, token, user }
+        User->>User: localStorage.setItem('token', token)
+    end
+```
+
+#### B. Sequence Diagram: Machine Learning Obesity Risk Prediction
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Doctor as Clinician (Doctor)
+    participant UI as React SPA (NewAssessment.jsx)
+    participant Gateway as Express Gateway (/api/doctor/assessments)
+    participant ML as Flask ML Service (/predict)
+    participant DB as MongoDB Atlas
+
+    Doctor->>UI: Fills 17 Features (Age, Gender, Height, Weight, FAF, TUE, etc.)
+    Doctor->>UI: Clicks "Predict Obesity Risk"
+    UI->>Gateway: POST /api/doctor/assessments/predict (17 Features)
+    Gateway->>Gateway: protect + authorize('doctor')
+    Gateway->>Gateway: Compute BMI & Physical_Activity_Score
+    Gateway->>ML: HTTP POST http://ml-service:5001/predict (17-Feature Payload)
+    ML->>ML: ColumnTransformer Preprocessing & Random Forest Inference
+    ML-->>Gateway: HTTP 200 { predicted_class, confidence, probabilities }
+    Gateway-->>UI: HTTP 200 { success: true, prediction: {...} }
+    UI-->>Doctor: Displays WHO Risk Badge & Top 3 Probability Bars
+
+    Doctor->>UI: Clicks "Save Assessment"
+    UI->>Gateway: POST /api/doctor/assessments/save
+    Gateway->>Gateway: Recomputes BMI & Re-verifies ML Output Server-Side
+    Gateway->>DB: Assessment.create() + Patient.findOneAndUpdate(currentBmi, healthDetails)
+    DB-->>Gateway: Saved Assessment Record
+    Gateway-->>UI: HTTP 201 { success: true, data: newAssessment }
+```
+
+#### C. Sequence Diagram: Automated Sri Lankan Meal Plan Generation & Approval
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Doctor as Clinician (Doctor)
+    participant UI as React SPA (MealPlanGenerator.jsx)
+    participant Gateway as Express Gateway (/api/doctor/meal-plans)
+    participant DB as MongoDB Atlas
+
+    Doctor->>UI: Clicks "Generate Suggested Meal Plan"
+    UI->>Gateway: POST /api/doctor/meal-plans/generate { assessmentId }
+    Gateway->>DB: Fetch Assessment & Patient Demographics
+    DB-->>Gateway: Patient Data (Height, Weight, Age, Gender, FAF, ObesityClass)
+    Gateway->>Gateway: Calculate Mifflin-St Jeor BMR
+    Gateway->>Gateway: Calculate TDEE (BMR * ActivityFactor)
+    Gateway->>Gateway: Calculate Target Calories (TDEE - Calorie Offset, Clamped >= 1200 kcal)
+    Gateway->>DB: Query MealTemplates (SuitableFor, DietaryType, Exclude Allergens/Dislikes)
+    DB-->>Gateway: Eligible Meal Templates
+    Gateway->>Gateway: 5-Step Calorie Proximity Optimization across 4 Meal Slots
+    Gateway-->>UI: HTTP 200 { suggestedPlan: { bmr, tdee, dailyCalorieTarget, meals } }
+    
+    Doctor->>UI: Reviews Plan & Clicks "Approve Meal Plan"
+    UI->>Gateway: POST /api/doctor/meal-plans/:id/approve
+    Gateway->>Gateway: 9-Point Clinical Validation Check
+    Gateway->>DB: MealPlan.save(status: 'Approved')
+    Gateway->>DB: Appointment.updateMany({ patientId, doctorId, status: 'approved' }, { status: 'completed' })
+    DB-->>Gateway: Updated Records
+    Gateway-->>UI: HTTP 200 { success: true, message: "Meal plan approved & appointment completed" }
+```
+
+---
+
+### 5. Activity Diagrams (Clinical & Algorithmic Workflows)
+
+#### A. Activity Diagram: 5-Step Sri Lankan Meal Curation Algorithm
+
+```mermaid
+flowchart TD
+    Start([Start Meal Curation Engine]) --> Step1[1. Query Master Library: Filter templates where isActive == true]
+    Step1 --> Step2[2. Clinical Match: Filter suitableFor containing Patient ObesityClass]
+    Step2 --> Step3{3. Dietary Preference Check}
+    Step3 -->|Vegan| VeganFilter[Select dietaryTypes == 'Vegan']
+    Step3 -->|Vegetarian| VegFilter[Select dietaryTypes IN ('Vegetarian', 'Vegan')]
+    Step3 -->|No Preference| AllDiet[Allow All Dietary Types]
+    
+    VeganFilter --> Step4[4. Safety Filter: Strip dishes matching Patient Allergens or Disliked Foods]
+    VegFilter --> Step4
+    AllDiet --> Step4
+    
+    Step4 --> SplitSlots[5. Divide Daily Calorie Target into 4 Slots:<br/>Breakfast: 25% | Lunch: 35% | Dinner: 30% | Snack: 10%]
+    SplitSlots --> Proximity[Select Template for each slot that minimizes |Calories - Target Slot Calories|]
+    Proximity --> CompilePlan[Compile 4-Slot Meal Plan with Macronutrient Totals]
+    CompilePlan --> End([Render Suggested Plan to Clinician])
+```
+
+---
+
+### 6. State Machine Diagram: Appointment Lifecycle Management
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending : Patient Requests Appointment
+    
+    pending --> approved : Admin Approves (Slot Conflict Checked & Doctor Assigned)
+    pending --> rejected : Admin Rejects (Mandatory Rejection Reason Logged)
+    pending --> cancelled : Patient / Admin Cancels (Cancellation Reason Logged)
+    
+    approved --> completed : Clinician Completes Consultation (Consultation Note Logged)
+    approved --> completed : Clinician Approves Patient Meal Plan (Auto-Completed)
+    approved --> approved : Admin Reschedules Appointment (Conflict Checked)
+    approved --> cancelled : Patient / Admin Cancels
+    
+    rejected --> [*]
+    cancelled --> [*]
+    completed --> [*]
+```
+
+---
+
+### 7. Component & Infrastructure Topology Diagram
+
+```mermaid
+graph TD
+    subgraph Client_App [Client Presentation - React 19 SPA]
+        UI_Auth[Auth Module]
+        UI_Admin[Admin Management Module]
+        UI_Doctor[Doctor Clinical Console]
+        UI_Patient[Patient Self-Service Portal]
+        UI_PDF[pdfExport.js Sanitizer]
+        UI_Client[Axios apiClient.js Interceptor]
+    end
+
+    subgraph Server_App [Express 5.1 API Gateway]
+        MW_Auth[authMiddleware JWT & RBAC]
+        Routes_Admin[Admin Routes]
+        Routes_Doc[Doctor Routes]
+        Routes_Pat[Patient Routes]
+        Ctrl_Clinical[Clinical Controllers]
+        Svc_Email[Nodemailer Email Service]
+        Mongoose_Models[9 Mongoose Schema Models]
+    end
+
+    subgraph ML_Microservice [Python 3.11 Flask Service]
+        Flask_API[Flask REST API /predict]
+        SK_Pipeline[ColumnTransformer Pipeline]
+        RF_Model[RandomForestClassifier .joblib]
+    end
+
+    subgraph Data_Storage [Data Tier]
+        Mongo_DB[(MongoDB Atlas Database)]
+    end
+
+    UI_Auth --> UI_Client
+    UI_Admin --> UI_Client
+    UI_Doctor --> UI_Client
+    UI_Patient --> UI_Client
+    UI_Client -->|Bearer JWT / REST| MW_Auth
+
+    MW_Auth --> Routes_Admin
+    MW_Auth --> Routes_Doc
+    MW_Auth --> Routes_Pat
+
+    Routes_Admin --> Ctrl_Clinical
+    Routes_Doc --> Ctrl_Clinical
+    Routes_Pat --> Ctrl_Clinical
+
+    Ctrl_Clinical --> Svc_Email
+    Ctrl_Clinical --> Mongoose_Models
+    Ctrl_Clinical -->|HTTP POST /predict| Flask_API
+
+    Flask_API --> SK_Pipeline --> RF_Model
+    Mongoose_Models -->|Mongoose BSON| Mongo_DB
+```
+
+---
+
+### 8. Deployment Node Diagram (Docker Container Bridge Network)
+
+```mermaid
+graph TD
+    subgraph Host_Machine [Production Server / Local Host]
+        subgraph Docker_Engine [Docker Bridge Network: obesity-network]
+            
+            subgraph Node_Frontend [Container: obesity-frontend]
+                NGINX[Nginx 1.27 Alpine Web Server<br/>Port 80 (Internal)<br/>Mapped to Host: 3000, 5173]
+                BUILD[Compiled React 19 Static Bundle]
+                NGINX --> BUILD
+            end
+
+            subgraph Node_Backend [Container: obesity-backend]
+                NODE[Node.js 20 Alpine Runtime<br/>Express 5.1.0 Gateway<br/>Port 5000 (Internal & Host)]
+            end
+
+            subgraph Node_ML [Container: obesity-ml-service]
+                PYTHON[Python 3.11 Slim Runtime<br/>Flask 3.1.1 Microservice<br/>Port 5001 (Internal & Host)]
+                MODEL_FILE[final_obesity_random_forest_pipeline.joblib]
+                PYTHON --> MODEL_FILE
+            end
+
+        end
+
+        subgraph Cloud_Tier [External Cloud Services]
+            ATLAS[(MongoDB Atlas Cloud Replica Set)]
+            SMTP[SMTP / Gmail Mail Relay]
+        end
+
+    end
+
+    NGINX -->|Reverse Proxy /api| NODE
+    NODE -->|Internal HTTP :5001| PYTHON
+    NODE -->|TLS / Mongoose Connection| ATLAS
+    NODE -->|TLS Port 587| SMTP
 ```
 
 ---
@@ -97,57 +670,14 @@ graph TD
 +------------------------------------+-----------------------------------+---------------------------+
 ```
 
-### 1. 🛡️ Administrator Portal
-* **Clinician Onboarding:** Provision doctor profiles, generate cryptographically secure 48-hour password reset tokens, and dispatch automated HTML welcome credentials via Nodemailer.
-* **Patient Management & Doctor Assignment:** Filter registered patients by age, gender, or status, and assign primary clinicians.
-* **Anti-Double-Booking Scheduler:** Approve, reject (with mandatory reason), or reschedule appointments with real-time concurrency validation preventing clinician and patient double-booking.
-* **Global System Analytics:** Interactive Recharts dashboard tracking 6-month assessment volume trends, global obesity category distributions, and clinic workloads.
-* **System Audit Reporting:** Generate 5 exportable administrative PDF reports (Patient Directory, Doctor Performance, Appointment Audit, Obesity Stratification, Progress Tracking).
-
-### 2. 🩺 Doctor / Clinician Portal
-* **Patient Clinical Dossier:** Complete view of assigned patients containing medical histories, prior ML assessments, active meal plans, and timestamped progress records.
-* **ML-Powered Assessment Console:** Input 17 physiological and lifestyle variables to receive real-time classification across 7 WHO obesity categories with class confidence scores and top-3 probability distributions.
-* **Automated Sri Lankan Meal Planning Engine:** Automatically compute Mifflin-St Jeor BMR, PAL-scaled TDEE, and disease-specific caloric targets ($\ge 1200\text{ kcal}$ safety floor), curating 4 daily meal slots from 56 native Sri Lankan dishes.
-* **Meal Slot Substitution:** Search alternative meal templates for specific meal slots to swap recipes while maintaining nutritional macros.
-* **Clinical Consultation Notes:** Multi-author clinical progress notes protected by strict author ownership verification.
-* **Consultation Completion:** Complete appointments with mandatory consultation commentary and follow-up flags.
-
-### 3. 👤 Patient Portal
-* **Self-Registration & Security:** Patient self-registration with bcrypt password hashing (12 salt rounds) and stateless 7-day JWT authentication.
-* **Appointment Booking Portal:** Request consultation slots with active clinicians, track approval status, and cancel pending requests.
-* **Approved Meal Plan Review:** Access tailored daily meal plans complete with portion sizes, macronutrient breakdowns, hydration targets, and substitute suggestions.
-* **Longitudinal Progress Tracking:** Log daily body weight, meal plan compliance (`'Not Followed'` to `'Fully Followed'`), and physical activity with interactive Recharts BMI trend lines.
-* **Sanitized PDF Health Reports:** Export client-side clinical health summaries using a custom color-gamut converter (`pdfExport.js`) supporting modern Tailwind v4 CSS.
-
 ---
 
-## 🧠 Machine Learning Intelligence Tier
+## 🧠 Machine Learning Subsystem
 
-The predictive intelligence microservice operates as a stateless Flask API loading a serialized **Random Forest Classifier Pipeline** trained on the benchmark UCI Obesity Levels dataset.
-
-```
-+----------------------------------------------------------------------------------------------------+
-|                                  ML PIPELINE ARCHITECTURE                                          |
-+----------------------------------------------------------------------------------------------------+
-|  17 RAW FEATURES (Age, Gender, Height, Weight, FAVC, FCVC, NCP, CAEC, CH2O, SCC, CALC, etc.)      |
-|                                                  │                                                 |
-|                                                  ▼                                                 |
-|  [FEATURE ENGINEERING] -> Physical_Activity_Score = (FAF * 3) + ((1 - (TUE / 24)) * 2)            |
-|                                                  │                                                 |
-|                                                  ▼                                                 |
-|  [COLUMN TRANSFORMER]                                                                              |
-|    ├── Continuous (8)  ──► SimpleImputer(median) ──► IQRClipper(3.0*IQR) ──► StandardScaler()      |
-|    ├── Ordinal (1)     ──► SimpleImputer(median) ──► StandardScaler()                              |
-|    ├── Binary Cat (5)  ──► SimpleImputer(mode)   ──► OrdinalEncoder()                              |
-|    └── Nominal Cat (3) ──► SimpleImputer(mode)   ──► OneHotEncoder(handle_unknown='ignore')         |
-|                                                  │                                                 |
-|                                                  ▼                                                 |
-|  [RANDOM FOREST CLASSIFIER] -> n_estimators=300, max_depth=20, min_samples_split=2, balanced       |
-|                                                  │                                                 |
-|                                                  ▼                                                 |
-|  [OUTPUT] -> Predicted WHO Class + Confidence % + Top 3 Probability Breakdown                      |
-+----------------------------------------------------------------------------------------------------+
-```
+* **Algorithm:** `RandomForestClassifier` (scikit-learn `1.6.1` Pipeline serialized via `joblib` into a 19.5 MB model binary).
+* **Dataset:** UCI Obesity Levels dataset ($N=2,087$ clean records across 17 features).
+* **Engineered Feature:** $\text{Physical\_Activity\_Score} = (\text{FAF} \times 3) + \left(1 - \frac{\text{TUE}}{24}\right) \times 2$.
+* **Classification Targets (7 WHO Classes):** `Insufficient_Weight`, `Normal_Weight`, `Overweight_Level_I`, `Overweight_Level_II`, `Obesity_Type_I`, `Obesity_Type_II`, `Obesity_Type_III`.
 
 ### Empirical Test Performance ($N=418$ Test Instances)
 
@@ -168,45 +698,14 @@ The predictive intelligence microservice operates as a stateless Flask API loadi
 
 ## 🥗 Nutritional & Clinical Energy Engine
 
-The nutritional recommendation engine combines clinically validated metabolic calculations with culturally authentic dietary templates.
-
-```
-+----------------------------------------------------------------------------------------------------+
-|                                    ENERGY BALANCE CALCULATIONS                                     |
-+----------------------------------------------------------------------------------------------------+
-| 1. Body Mass Index (BMI):                                                                          |
-|    BMI = Weight (kg) / (Height (m))^2                                                              |
-|                                                                                                    |
-| 2. Basal Metabolic Rate (Mifflin-St Jeor):                                                         |
-|    Male:   BMR = (10 * W_kg) + (6.25 * H_cm) - (5 * Age) + 5                                       |
-|    Female: BMR = (10 * W_kg) + (6.25 * H_cm) - (5 * Age) - 161                                     |
-|                                                                                                    |
-| 3. Total Daily Energy Expenditure (TDEE):                                                          |
-|    TDEE = Math.round(BMR * Physical_Activity_Factor)                                               |
-|    - FAF 0 (Sedentary) = 1.20       | FAF 1 (Light Activity) = 1.375                               |
-|    - FAF 2 (Moderate Activity) = 1.55 | FAF 3 (Active) = 1.725                                     |
-|                                                                                                    |
-| 4. Disease-Calibrated Caloric Target Adjustment:                                                   |
-|    - Insufficient_Weight  : TDEE + 300 kcal                                                        |
-|    - Normal_Weight        : TDEE + 0 kcal                                                          |
-|    - Overweight_Level_I   : TDEE - 300 kcal                                                        |
-|    - Overweight_Level_II  : TDEE - 400 kcal                                                        |
-|    - Obesity_Type_I/II/III: TDEE - 500 kcal                                                        |
-|    - Safety Minimum Clamp : max(Adjusted Target, 1200 kcal)                                        |
-|                                                                                                    |
-| 5. Daily Meal Caloric Split:                                                                       |
-|    - Breakfast: 25% | Lunch: 35% | Dinner: 30% | Snack: 10%                                        |
-+----------------------------------------------------------------------------------------------------+
-```
-
-### 5-Step Sri Lankan Meal Curation Algorithm
-1. **Active Filter:** Query only templates with `isActive: true`.
-2. **Clinical Class Match:** Filter templates where `suitableFor` contains the patient's predicted `obesityClass`.
-3. **Dietary Preference Match:** Filter `dietaryTypes` (`'Vegan'`, `'Vegetarian'`, or `'No Special Preference'`).
-4. **Allergen & Dislike Exclusion:** Strip templates matching patient's 9 allergen categories or disliked ingredients.
-5. **Caloric Proximity Minimization:** Pick candidates that minimize $|\text{Calories} - \text{Meal Target Allocation}|$.
-
-*Includes 56 seeded native dishes (e.g., Red Rice Milk Rice, String Hoppers, Kurakkan Pittu, Pol Roti, Dhal Curry, Fish Ambul Thiyal, Kanda, Gotu Kola Sambol).*
+1. **Body Mass Index (BMI):** $\text{BMI} = \frac{\text{Weight (kg)}}{(\text{Height (m)})^2}$
+2. **Basal Metabolic Rate (Mifflin-St Jeor):**
+   * $\text{BMR}_{\text{Male}} = (10 \times W_{\text{kg}}) + (6.25 \times H_{\text{cm}}) - (5 \times A) + 5$
+   * $\text{BMR}_{\text{Female}} = (10 \times W_{\text{kg}}) + (6.25 \times H_{\text{cm}}) - (5 \times A) - 161$
+3. **Total Daily Energy Expenditure (TDEE):** $\text{TDEE} = \text{BMR} \times \text{Activity Factor}$ ($1.20$ to $1.725$).
+4. **Caloric Adjustment by Class:** Insufficient ($+300$), Normal ($0$), Overweight I ($-300$), Overweight II ($-400$), Obesity I/II/III ($-500$), clamped to $\ge 1200\text{ kcal}$.
+5. **Daily Meal Split:** Breakfast ($25\%$), Lunch ($35\%$), Dinner ($30\%$), Snack ($10\%$).
+6. **Sri Lankan Meal Library:** 56 seeded native dishes (Red Rice Milk Rice, String Hoppers, Kurakkan Pittu, Pol Roti, Dhal Curry, Fish Ambul Thiyal, etc.) with 9 allergen filters and medical warning tags.
 
 ---
 
