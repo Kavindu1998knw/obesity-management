@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏥 Obesity Management System (OMS)
+# 🏥 Obesity Management System
 ### *AI-Powered Clinical Decision Support & Sri Lankan Dietary Management Platform*
 
 [![CI Quality Gate](https://github.com/Kavindu1998knw/obesity-management/actions/workflows/ci.yml/badge.svg)](https://github.com/Kavindu1998knw/obesity-management/actions/workflows/ci.yml)
