@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  Loader2,
   Stethoscope,
   Scale,
   Ruler,
@@ -9,10 +8,7 @@ import {
   Utensils,
   Calendar,
   TrendingUp,
-  User,
-  Clock,
-  CheckCircle2,
-  AlertCircle
+  User
 } from 'lucide-react';
 import apiClient from '../../services/apiClient';
 

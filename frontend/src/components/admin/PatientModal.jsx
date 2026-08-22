@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Stethoscope, User, Calendar, CheckCircle2 } from 'lucide-react';
+import { X, Loader2, Stethoscope, User, Calendar } from 'lucide-react';
 import apiClient from '../../services/apiClient';
 
 export default function PatientModal({ isOpen, onClose, onSubmit, patient, loading }) {

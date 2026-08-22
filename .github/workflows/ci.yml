@@ -1,0 +1,185 @@
+name: CI Pipeline – Obesity Management System
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+# Ensure concurrent runs on the same PR/branch cancel older runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # 1. FRONTEND CI (React SPA + Vite + Oxlint + Build Verification)
+  # ============================================================================
+  frontend-ci:
+    name: Frontend – Lint & Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci || npm install
+
+      - name: Run Oxlint Linter
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build React Production Bundle
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:5000/api
+        run: npm run build
+
+      - name: Upload Compiled Frontend Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-bundle
+          path: frontend/dist/
+          retention-days: 7
+
+  # ============================================================================
+  # 2. BACKEND CI (Node.js / Express 5 / Mongoose / Swagger Spec Validation)
+  # ============================================================================
+  backend-ci:
+    name: Backend – Syntax & OpenAPI Spec Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm ci || npm install
+
+      - name: Validate JavaScript Syntax (Controllers, Routes, Models, Docs)
+        working-directory: backend
+        run: |
+          node -c index.js
+          node -c docs/swagger.js
+          node -c config/dbConnection.js
+          node -c middleware/authMiddleware.js
+          node -c services/emailService.js
+          for file in controllers/*.js routes/*.js models/*.js; do
+            node -c "$file"
+          done
+
+      - name: Verify Swagger OpenAPI 3.0.3 Spec Structure
+        working-directory: backend
+        run: |
+          node -e "
+            import('./docs/swagger.js').then(({ swaggerSpec }) => {
+              const paths = Object.keys(swaggerSpec.paths).length;
+              const schemas = Object.keys(swaggerSpec.components.schemas).length;
+              console.log('OpenAPI Title:', swaggerSpec.info.title);
+              console.log('Total Documented Paths:', paths);
+              console.log('Total Component Schemas:', schemas);
+              if (paths < 40) throw new Error('OpenAPI path count mismatch!');
+              process.exit(0);
+            }).catch(err => {
+              console.error('Swagger validation failed:', err);
+              process.exit(1);
+            });
+          "
+
+  # ============================================================================
+  # 3. ML SERVICE CI (Python 3.11 / Flask / Random Forest Pipeline Validation)
+  # ============================================================================
+  ml-service-ci:
+    name: ML Service – Python Environment & Model Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: ml-service/requirements.txt
+
+      - name: Install Python Dependencies
+        run: pip install -r ml-service/requirements.txt
+
+      - name: Compile & Validate Flask Application Syntax
+        run: python -m py_compile ml-service/app.py
+
+      - name: Verify Pre-Trained Model Pipeline Integrity
+        run: |
+          python -c "
+          import os, joblib, sklearn.compose._column_transformer
+          
+          # Emulate runtime pipeline compatibility patch
+          if not hasattr(sklearn.compose._column_transformer, '_RemainderColsList'):
+              class _RemainderColsList(list): pass
+              sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
+
+          model_path = os.path.join('ml-service', 'models', 'final_obesity_random_forest_pipeline.joblib')
+          assert os.path.exists(model_path), f'Model binary missing at {model_path}'
+          
+          pipeline = joblib.load(model_path)
+          print('Model successfully unpickled. Pipeline type:', type(pipeline))
+          print('Model classes:', getattr(pipeline, 'classes_', 'N/A'))
+          "
+
+  # ============================================================================
+  # 4. DOCKER COMPOSE CONFIGURATION VALIDATION
+  # ============================================================================
+  docker-validation:
+    name: Docker – Compose Schema & Config Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration Syntax
+        env:
+          MONGODB_URI: mongodb+srv://dummy_ci_user:dummy_ci_pass@cluster.mongodb.net/test?retryWrites=true&w=majority
+          JWT_SECRET: dummy_ci_jwt_secret_key_minimum_32_characters
+          VITE_API_URL: http://localhost:5000/api
+        run: docker compose config
+
+  # ============================================================================
+  # 5. PIPELINE SUMMARY & QUALITY GATE
+  # ============================================================================
+  ci-status:
+    name: Continuous Integration Quality Gate
+    runs-on: ubuntu-latest
+    needs: [frontend-ci, backend-ci, ml-service-ci, docker-validation]
+    if: always()
+    steps:
+      - name: Check All CI Job Results
+        run: |
+          if [ "${{ needs.frontend-ci.result }}" != "success" ] || \
+             [ "${{ needs.backend-ci.result }}" != "success" ] || \
+             [ "${{ needs.ml-service-ci.result }}" != "success" ] || \
+             [ "${{ needs.docker-validation.result }}" != "success" ]; then
+            echo "❌ CI Pipeline Failed. One or more verification stages did not pass."
+            exit 1
+          fi
+          echo "✅ All CI checks passed successfully: Frontend built, Backend verified, ML model validated, Docker configured."

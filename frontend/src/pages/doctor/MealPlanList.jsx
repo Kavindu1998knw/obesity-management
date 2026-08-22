@@ -5,12 +5,9 @@ import apiClient from '../../services/apiClient';
 import {
   Utensils,
   Search,
-  Filter,
   Eye,
   PenSquare,
-  FileDown,
-  CheckCircle2,
-  AlertCircle
+  FileDown
 } from 'lucide-react';
 
 export default function MealPlanList() {

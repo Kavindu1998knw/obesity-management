@@ -40,6 +40,6 @@ lerna-debug.log*
 __pycache__/
 *.py[cod]
 *$py.class
-.pytest_cache/  
- 
-d a t a b a s e - r e c o v e r y /  
+.pytest_cache/
+database-recovery/
+!.env.example

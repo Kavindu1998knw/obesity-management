@@ -9,9 +9,7 @@ import {
   Eye,
   Activity,
   TrendingUp,
-  Utensils,
-  Stethoscope,
-  ChevronRight
+  Utensils
 } from 'lucide-react';
 
 const OBESITY_LEVELS = [

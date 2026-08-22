@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import apiClient from '../../services/apiClient';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -18,7 +18,6 @@ import {
 
 export default function PatientProgress() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [records, setRecords] = useState([]);
   const [hasApprovedMealPlan, setHasApprovedMealPlan] = useState(false);

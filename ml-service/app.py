@@ -10,6 +10,15 @@ import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# Compatibility fix for newer scikit-learn unpickling older pipelines
+import sklearn.compose._column_transformer
+if not hasattr(sklearn.compose._column_transformer, '_RemainderColsList'):
+    class _RemainderColsList(list):
+        pass
+    sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
+
+from sklearn.impute import SimpleImputer
+
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
@@ -21,8 +30,21 @@ CORS(app)
 # ---------------------------------------------------------------------------
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models', 'final_obesity_random_forest_pipeline.joblib')
 
+def _patch_pipeline_attributes(pipe):
+    """Patch missing attributes on deserialized sklearn transformers across version gaps."""
+    if hasattr(pipe, 'named_steps'):
+        for step in pipe.named_steps.values():
+            if hasattr(step, 'transformers_'):
+                for trans_entry in step.transformers_:
+                    trans = trans_entry[1] if len(trans_entry) > 1 else None
+                    if hasattr(trans, 'steps'):
+                        for _, s_trans in trans.steps:
+                            if isinstance(s_trans, SimpleImputer) and not hasattr(s_trans, '_fill_dtype'):
+                                s_trans._fill_dtype = getattr(s_trans, '_fit_dtype', None)
+
 try:
     pipeline = joblib.load(MODEL_PATH)
+    _patch_pipeline_attributes(pipeline)
     print(f'[ML Service] Model loaded successfully from {MODEL_PATH}')
 except Exception as e:
     print(f'[ML Service] FATAL – Failed to load model: {e}')

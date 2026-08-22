@@ -1,0 +1,86 @@
+services:
+  # ============================================================================
+  # 1. Machine Learning Inference Microservice (Python / Flask / Random Forest)
+  # ============================================================================
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: obesity-ml-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - ML_PORT=5001
+    networks:
+      - obesity-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; sys_exit = 0 if urllib.request.urlopen('http://localhost:5001/health').getcode() == 200 else 1; exit(sys_exit)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # 2. Backend REST API Service (Node.js / Express 5 / Mongoose)
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: obesity-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ML_SERVICE_URL=http://ml-service:5001
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+    depends_on:
+      ml-service:
+        condition: service_healthy
+    networks:
+      - obesity-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5000/').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # 3. Frontend Web Application (React SPA / Vite / Nginx Alpine)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
+    container_name: obesity-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - obesity-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+# ==============================================================================
+# Isolated Bridge Network
+# ==============================================================================
+networks:
+  obesity-network:
+    driver: bridge

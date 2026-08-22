@@ -15,8 +15,15 @@ import patientAssessmentRoutes from './routes/patientAssessmentRoutes.js';
 import patientMealPlanRoutes from './routes/patientMealPlanRoutes.js';
 import patientProgressRoutes from './routes/patientProgressRoutes.js';
 import patientReportRoutes from './routes/patientReportRoutes.js';
+import { swaggerUi, swaggerSpec, swaggerUiOptions } from './docs/swagger.js';
 
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL ERROR: JWT_SECRET environment variable is missing.');
@@ -28,6 +35,13 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// Swagger API Documentation UI & Spec
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json(swaggerSpec);
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
@@ -51,7 +65,9 @@ const start = async () => {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
+    console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
   });
 };
 
 start();
+

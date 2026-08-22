@@ -5,12 +5,9 @@ import apiClient from '../../services/apiClient';
 import {
   Activity,
   Search,
-  Filter,
-  Calendar,
   Eye,
   Utensils,
-  Plus,
-  Stethoscope
+  Plus
 } from 'lucide-react';
 
 function getObesityBadge(cls) {
