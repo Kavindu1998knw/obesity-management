@@ -735,40 +735,40 @@ sequenceDiagram
     Admin->>Frontend: Review pending appointment
     Frontend->>Express: PATCH /api/admin/appointments/:id/status { status: 'approved' }
     Express->>AdminCtrl: updateAppointmentStatus()
-    AdminCtrl->>AdminCtrl: Validate state transition (pending -> approved allowed)
+    AdminCtrl->>AdminCtrl: Validate state transition (pending to approved allowed)
     AdminCtrl->>MongoDB: Check doctor double-booking (same doctor, date, time, approved)
     AdminCtrl->>MongoDB: Check patient slot conflict (same patient, date, time)
-    AdminCtrl->>MongoDB: appointment.status = 'approved'; save()
+    AdminCtrl->>MongoDB: Update appointment status to 'approved' and save
     AdminCtrl->>MongoDB: Auto-assign doctor to patient (if first approval)
     AdminCtrl-->>Admin: 200 Appointment approved
 
     Note over Admin, MongoDB: Alternative - Admin Rejects
     Admin->>Express: PATCH /api/admin/appointments/:id/status { status: 'rejected', rejectionReason }
     AdminCtrl->>AdminCtrl: Validate rejectionReason required
-    AdminCtrl->>MongoDB: appointment.status = 'rejected'; save()
+    AdminCtrl->>MongoDB: Update appointment status to 'rejected' with reason and save
     AdminCtrl-->>Admin: 200 Appointment rejected
 
     Note over Admin, MongoDB: Alternative - Admin Reschedules
     Admin->>Express: PUT /api/admin/appointments/:id/reschedule { date, time, doctorId, rescheduleNote }
     Express->>AdminCtrl: rescheduleAppointment()
     AdminCtrl->>AdminCtrl: Validate future date, doctor active, no conflicts
-    AdminCtrl->>MongoDB: Update date, time, doctorId, status = 'approved'
+    AdminCtrl->>MongoDB: Update date, time, doctorId, set status to 'approved' and save
     AdminCtrl-->>Admin: 200 Rescheduled
 
     Note over Doctor, MongoDB: Step 3 - Doctor Completes
     Doctor->>Frontend: Add consultation note
     Frontend->>Express: PUT /api/doctor/appointments/:id/complete
     Express->>DoctorApptCtrl: completeAppointment()
-    DoctorApptCtrl->>DoctorApptCtrl: Validate status === 'approved'
+    DoctorApptCtrl->>DoctorApptCtrl: Validate status is 'approved'
     DoctorApptCtrl->>DoctorApptCtrl: Validate consultationNote required (max 2000 chars)
-    DoctorApptCtrl->>MongoDB: appointment.status = 'completed'; save()
+    DoctorApptCtrl->>MongoDB: Update appointment status to 'completed' and save
     DoctorApptCtrl-->>Doctor: 200 Appointment completed
 
     Note over Patient, MongoDB: Alternative - Patient Cancels
     Patient->>Express: PUT /api/patient/appointments/:id/cancel { cancellationReason }
     Express->>PatientApptCtrl: cancelAppointment()
     PatientApptCtrl->>PatientApptCtrl: Validate status is pending or approved
-    PatientApptCtrl->>MongoDB: appointment.status = 'cancelled'; save()
+    PatientApptCtrl->>MongoDB: Update appointment status to 'cancelled' with reason and save
     PatientApptCtrl-->>Patient: 200 Cancelled
 ```
 
@@ -801,7 +801,7 @@ sequenceDiagram
     MongoDB-->>ProgressCtrl: null or existing (409 if duplicate)
     ProgressCtrl->>MongoDB: ProgressRecord.create({ patientId, weight, bmi, mealAdherence, physicalActivity })
     ProgressCtrl->>MongoDB: Check if this is latest record
-    ProgressCtrl->>MongoDB: Patient.save({ weight, currentBmi }) if latest
+    ProgressCtrl->>MongoDB: Update patient current weight and currentBmi if latest
     ProgressCtrl-->>Patient: 201 Progress recorded
 
     Note over Patient, MongoDB: Patient Views Progress History
@@ -817,8 +817,8 @@ sequenceDiagram
     Frontend->>Express: PUT /api/doctor/patients/:id/health-details
     Express->>DoctorPatCtrl: updateHealthDetails()
     DoctorPatCtrl->>DoctorPatCtrl: Verify doctor is assigned or has appointment
-    DoctorPatCtrl->>DoctorPatCtrl: validateAndSanitizeHealthDetails (allowlist + enum + range validation)
-    DoctorPatCtrl->>MongoDB: patient.healthDetails = sanitized; save()
+    DoctorPatCtrl->>DoctorPatCtrl: validateAndSanitizeHealthDetails (allowlist, enum, range validation)
+    DoctorPatCtrl->>MongoDB: Save sanitized healthDetails to patient document
     DoctorPatCtrl-->>Doctor: 200 Health details updated
 
     Note over Doctor, MongoDB: Doctor Adds Clinical Note
@@ -845,14 +845,14 @@ sequenceDiagram
     participant MongoDB as MongoDB Atlas
 
     Note over Doctor, MongoDB: Step 1 - Generate Suggested Meal Plan
-    Doctor->>Frontend: Select patient + assessment, click Generate
+    Doctor->>Frontend: Select patient and assessment, click Generate
     Frontend->>Express: POST /api/doctor/meal-plans/generate { assessmentId }
     Express->>MealCtrl: generateSuggestedPayload()
     MealCtrl->>MongoDB: Assessment.findById(assessmentId)
     MealCtrl->>MongoDB: Patient.findOne({ userId: patientId })
     MealCtrl->>MealCtrl: Extract age from patient DOB
-    MealCtrl->>MealCtrl: BMR = Mifflin-St Jeor (10*weight + 6.25*height_cm - 5*age ± gender)
-    MealCtrl->>MealCtrl: Activity Factor from FAF (0->1.20, 1->1.375, 2->1.55, 3->1.725)
+    MealCtrl->>MealCtrl: BMR = Mifflin-St Jeor (10*weight + 6.25*height_cm - 5*age +/- gender offset)
+    MealCtrl->>MealCtrl: Activity Factor from FAF (0: 1.20, 1: 1.375, 2: 1.55, 3: 1.725)
     MealCtrl->>MealCtrl: TDEE = BMR * Activity Factor
     MealCtrl->>MealCtrl: Calorie Adjustment by obesity class (-500 to +300)
     MealCtrl->>MealCtrl: Safety floor: if target < 1000, clamp to 1200
@@ -887,8 +887,8 @@ sequenceDiagram
     Frontend->>Express: POST /api/doctor/meal-plans/:id/approve
     Express->>MealCtrl: approveMealPlan()
     MealCtrl->>MongoDB: MealPlan.findById(id)
-    MealCtrl->>MealCtrl: Validate status === 'Draft' and doctorId matches
-    MealCtrl->>MongoDB: mealPlan.status = 'Approved'; mealPlan.approvedAt = now; save()
+    MealCtrl->>MealCtrl: Validate status is 'Draft' and doctorId matches
+    MealCtrl->>MongoDB: Set status to 'Approved' and save approvedAt timestamp
     MealCtrl-->>Doctor: 200 Meal plan approved (now visible to patient)
 ```
 
