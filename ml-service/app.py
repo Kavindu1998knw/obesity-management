@@ -125,6 +125,6 @@ def predict():
 # Run
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
-    port = int(os.environ.get('ML_PORT', 5001))
+    port = int(os.environ.get('PORT', os.environ.get('ML_PORT', 5001)))
     print(f'[ML Service] Starting on port {port}')
     app.run(host='0.0.0.0', port=port, debug=False)

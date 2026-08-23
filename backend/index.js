@@ -25,9 +25,8 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL ERROR: JWT_SECRET environment variable is missing.');
-  process.exit(1);
+if (!process.env.JWT_SECRET && !process.env.VERCEL) {
+  console.warn('WARNING: JWT_SECRET environment variable is missing.');
 }
 
 const app = express();
@@ -35,6 +34,16 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// Ensure MongoDB is connected before handling requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    return res.status(500).json({ message: 'Database connection failed', error: err.message });
+  }
+});
 
 // Swagger API Documentation UI & Spec
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
@@ -61,13 +70,16 @@ app.get('/', (req, res) => {
   res.json({ message: 'Server is running' });
 });
 
-const start = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
-    console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
-  });
-};
+if (!process.env.VERCEL) {
+  const start = async () => {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server started on port ${PORT}`);
+      console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
+    });
+  };
+  start();
+}
 
-start();
+export default app;
 
