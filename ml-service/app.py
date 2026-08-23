@@ -62,7 +62,9 @@ EXPECTED_FEATURES = [
 # ---------------------------------------------------------------------------
 # Health-check
 # ---------------------------------------------------------------------------
+@app.route('/', methods=['GET'])
 @app.route('/health', methods=['GET'])
+@app.route('/healthz', methods=['GET'])
 def health():
     return jsonify({
         'status': 'ok' if pipeline is not None else 'model_not_loaded',
