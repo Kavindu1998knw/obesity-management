@@ -99,7 +99,7 @@ export default function DashboardSidebar({ role, menuItems, isOpen, onClose, onL
 
         <div className="px-2 pt-1 text-center">
           <p className="text-[10px] text-slate-400 leading-relaxed">
-            SmartObesity AI • Clinical Decision Support System
+            SmartObesity AI • Developed by <span className="text-teal-400 font-medium">Kavindu Weerasinghe</span>
           </p>
         </div>
       </div>

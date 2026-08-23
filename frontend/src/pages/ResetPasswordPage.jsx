@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
       >
         <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/30 to-emerald-500/30 rounded-[2.5rem] blur-xl opacity-60 pointer-events-none" />
 
-        <div className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-100 dark:border-slate-800 shadow-2xl rounded-3xl p-8 sm:p-10 transition-all duration-300">
+        <div className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-100 dark:border-slate-800 shadow-2xl rounded-3xl p-5 sm:p-7 lg:p-8 transition-all duration-300">
           
           <div className="text-center mb-7">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white shadow-lg shadow-teal-600/25 mb-4 border border-teal-400/30">

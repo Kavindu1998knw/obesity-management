@@ -1557,6 +1557,14 @@ flowchart TD
 
 ---
 
+## 👨‍💻 Author & Developer
+
+**Kavindu Weerasinghe**
+- GitHub: [@Kavindu1998knw](https://github.com/Kavindu1998knw)
+- Project: Smart Obesity AI - Clinical Decision Support & Diet Prescriptions System
+
+---
+
 <p align="center">
-  <strong>Built with ❤️ as a Software Engineering Final-Year Project</strong>
+  <strong>Smart Obesity AI • Developed by Kavindu Weerasinghe</strong>
 </p>

@@ -103,10 +103,13 @@ export default function DashboardLayout({ children, role }) {
           onLogout={requestLogout} 
         />
         
-        <main className="flex-1 overflow-y-auto w-full bg-slate-50/60 p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 overflow-y-auto w-full bg-slate-50/60 p-3 sm:p-6 lg:p-8 flex flex-col justify-between">
+          <div className="mx-auto max-w-7xl w-full">
             {children}
           </div>
+          <footer className="mt-8 pt-4 pb-2 border-t border-slate-200/80 text-center text-xs text-slate-400 font-medium">
+            SmartObesity AI • Developed by <span className="text-teal-600 font-semibold">Kavindu Weerasinghe</span>
+          </footer>
         </main>
       </div>
 
