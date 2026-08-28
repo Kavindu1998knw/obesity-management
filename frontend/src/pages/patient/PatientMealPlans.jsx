@@ -124,7 +124,7 @@ export default function PatientMealPlans() {
           <div className="space-y-6" ref={reportRef}>
             
             {/* Active Plan Overview Card */}
-            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 sm:p-8 space-y-6">
+            <div className="summary-card avoid-break avoid-page-break print-avoid-break bg-white border border-slate-100 rounded-2xl shadow-sm p-6 sm:p-8 space-y-6">
               
               {/* Plan Metadata Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-5">
@@ -246,9 +246,9 @@ export default function PatientMealPlans() {
                 <span>Daily Meal Breakdown & Recipes</span>
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {currentPlan.meals.map((meal, idx) => (
-                  <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-3">
+                  <div key={idx} className="meal-card avoid-break avoid-page-break print-avoid-break bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 font-bold text-[10px] uppercase border border-teal-100 mb-1.5">
@@ -288,20 +288,20 @@ export default function PatientMealPlans() {
                         );
                         if (alts.length === 0) return null;
                         return (
-                          <div className="mt-3 pt-3 border-t border-slate-100 bg-slate-50/80 p-3.5 rounded-xl space-y-2">
-                            <p className="text-[10px] font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3 text-teal-600" />
+                          <div className="mt-3 pt-3 border-t border-slate-200 bg-slate-50 p-4 rounded-xl space-y-2.5">
+                            <p className="text-xs font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                               <span>Alternative Options for Daily Variety:</span>
                             </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                               {alts.map((alt, aIdx) => (
-                                <div key={aIdx} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-1">
-                                  <div className="flex justify-between items-start">
-                                    <h5 className="text-xs font-bold text-slate-800 leading-tight truncate">{alt.name}</h5>
-                                    <span className="text-xs font-bold text-teal-700 shrink-0 ml-1">{alt.calories} kcal</span>
+                                <div key={aIdx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                                  <div className="flex justify-between items-start gap-1.5">
+                                    <h5 className="text-xs font-bold text-slate-900 leading-snug break-words flex-1">{alt.name}</h5>
+                                    <span className="text-xs font-bold text-teal-700 shrink-0 whitespace-nowrap">{alt.calories} kcal</span>
                                   </div>
-                                  <p className="text-[10px] text-slate-400">{alt.portionSize}</p>
-                                  <div className="flex gap-2 pt-1 border-t border-slate-100 text-[10px] text-slate-600">
+                                  <p className="text-[11px] text-slate-500 font-medium">{alt.portionSize}</p>
+                                  <div className="flex gap-2.5 pt-1.5 border-t border-slate-100 text-[11px] text-slate-700">
                                     <span><b>P:</b> {alt.protein}g</span>
                                     <span><b>C:</b> {alt.carbohydrates || alt.carbs}g</span>
                                     <span><b>F:</b> {alt.fat}g</span>

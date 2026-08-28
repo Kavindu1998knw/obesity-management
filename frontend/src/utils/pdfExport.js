@@ -101,13 +101,24 @@ export const convertColorToRgb = (colorStr) => {
     if (res) return res;
   }
 
-  // 3. If color-mix contains transparent, handle opacity safely
+  // 3. If color-mix contains transparent or slate, handle safely for light backgrounds
   if (trimmed.startsWith('color-mix')) {
+    if (trimmed.includes('slate-50') || trimmed.includes('0.98') || trimmed.includes('0.97')) {
+      const matchPercent = trimmed.match(/(\d+(?:\.\d+)?)\s*%/);
+      const pct = matchPercent ? parseFloat(matchPercent[1]) / 100 : 0.8;
+      return `rgba(248, 250, 252, ${pct.toFixed(2)})`;
+    }
+    if (trimmed.includes('teal')) {
+      const matchPercent = trimmed.match(/(\d+(?:\.\d+)?)\s*%/);
+      const pct = matchPercent ? parseFloat(matchPercent[1]) / 100 : 0.1;
+      return `rgba(13, 148, 136, ${pct.toFixed(2)})`;
+    }
     if (trimmed.includes('transparent')) {
       const matchPercent = trimmed.match(/(\d+(?:\.\d+)?)\s*%/);
       const pct = matchPercent ? parseFloat(matchPercent[1]) / 100 : 0.5;
-      return `rgba(71, 85, 105, ${pct.toFixed(2)})`;
+      return `rgba(241, 245, 249, ${pct.toFixed(2)})`;
     }
+    return '#f8fafc';
   }
 
   // 4. Try browser canvas context if available
@@ -140,11 +151,11 @@ export const convertColorToRgb = (colorStr) => {
   const numMatch = colorStr.match(/(?:oklch|oklab)\s*\(\s*([0-9.]+%?)/i);
   if (numMatch) {
     const lVal = parseNumberOrPercent(numMatch[1], 1);
-    if (lVal > 0.8) return '#f8fafc'; // light background
-    if (lVal < 0.3) return '#1e293b'; // dark text
+    if (lVal > 0.7) return '#f8fafc'; // light background
+    if (lVal < 0.4) return '#0f172a'; // dark text
   }
 
-  return '#475569';
+  return '#f8fafc';
 };
 
 /**
@@ -299,9 +310,60 @@ export const exportToPdf = async (elementOrId, options = {}) => {
           exportHelperStyle.textContent = `
             body, html {
               background-color: #ffffff !important;
-              color: #1e293b !important;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+              color: #0f172a !important;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+              -webkit-font-smoothing: antialiased !important;
+              text-rendering: geometricPrecision !important;
             }
+
+            *, *:before, *:after {
+              -webkit-font-smoothing: antialiased !important;
+              text-rendering: geometricPrecision !important;
+              box-sizing: border-box !important;
+            }
+
+            /* Prevent vertical/horizontal font clipping in canvas */
+            h1, h2, h3, h4, h5, h6, p, span, div, b, strong, td, th {
+              overflow: visible !important;
+              line-height: 1.35 !important;
+            }
+
+            .truncate {
+              overflow: visible !important;
+              white-space: normal !important;
+              text-overflow: unset !important;
+            }
+
+            /* High contrast clean card backgrounds */
+            .bg-slate-50, [class*="bg-slate-50"] {
+              background-color: #f8fafc !important;
+              border-color: #e2e8f0 !important;
+            }
+
+            .bg-teal-50, [class*="bg-teal-50"] {
+              background-color: #f0fdfa !important;
+            }
+
+            .bg-white {
+              background-color: #ffffff !important;
+            }
+
+            .text-slate-900, .text-slate-800 {
+              color: #0f172a !important;
+            }
+
+            .text-teal-700, .text-teal-800, .text-teal-900 {
+              color: #0f766e !important;
+            }
+
+            .text-slate-500, .text-slate-600 {
+              color: #475569 !important;
+            }
+
+            .text-slate-400 {
+              color: #64748b !important;
+            }
+
             table {
               border-collapse: collapse !important;
               width: 100% !important;
@@ -322,10 +384,17 @@ export const exportToPdf = async (elementOrId, options = {}) => {
             tr:nth-child(even) {
               background-color: #f8fafc !important;
             }
+            h1, h2, h3, h4, h5, h6 {
+              break-after: avoid !important;
+              page-break-after: avoid !important;
+            }
+
             /* Indivisible cards that must never be sliced across page breaks */
             .meal-card, .avoid-break, .print-avoid-break, .avoid-page-break, .meal-section, tr, .summary-card {
               break-inside: avoid !important;
               page-break-inside: avoid !important;
+              display: block !important;
+              margin-bottom: 24px !important;
             }
             .page-break-before {
               break-before: page !important;

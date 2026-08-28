@@ -502,7 +502,7 @@ export default function MealPlanGenerator() {
               const mealsOfType = plan.meals.filter(m => m.mealType === type);
               
               return (
-                <div key={type} className="space-y-3">
+                <div key={type} className="meal-card avoid-break avoid-page-break print-avoid-break space-y-3 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                   <div className="flex justify-between items-center border-b border-slate-200 pb-2">
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                       <Utensils className="w-3.5 h-3.5 text-teal-600" />
@@ -572,20 +572,20 @@ export default function MealPlanGenerator() {
                           const alts = plan.alternatives[type].filter(a => !selectedNames.has(a.name));
                           if (alts.length === 0) return null;
                           return (
-                            <div className="p-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl space-y-3">
-                              <p className="text-[11px] font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
-                                <Utensils className="w-3.5 h-3.5 text-teal-600" />
-                                Alternative Options for Daily Variety:
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                              <p className="text-xs font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                                <Utensils className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                                <span>Alternative Options for Daily Variety:</span>
                               </p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                 {alts.map((alt, aIdx) => (
-                                  <div key={aIdx} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-1">
-                                    <div className="flex justify-between items-start">
-                                      <h5 className="text-xs font-bold text-slate-800 leading-tight truncate">{alt.name}</h5>
-                                      <span className="text-xs font-bold text-teal-700 shrink-0 ml-1">{alt.calories} kcal</span>
+                                  <div key={aIdx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                                    <div className="flex justify-between items-start gap-1.5">
+                                      <h5 className="text-xs font-bold text-slate-900 leading-snug break-words flex-1">{alt.name}</h5>
+                                      <span className="text-xs font-bold text-teal-700 shrink-0 whitespace-nowrap">{alt.calories} kcal</span>
                                     </div>
-                                    <p className="text-[10px] text-slate-400">{alt.portionSize}</p>
-                                    <div className="flex gap-2 pt-1 border-t border-slate-100 text-[10px] text-slate-600">
+                                    <p className="text-[11px] text-slate-500 font-medium">{alt.portionSize}</p>
+                                    <div className="flex gap-2.5 pt-1.5 border-t border-slate-100 text-[11px] text-slate-700">
                                       <span><b>P:</b> {alt.protein}g</span>
                                       <span><b>C:</b> {alt.carbohydrates || alt.carbs}g</span>
                                       <span><b>F:</b> {alt.fat}g</span>
