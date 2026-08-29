@@ -26,6 +26,8 @@ import PatientAssessments from '../pages/patient/PatientAssessments';
 import PatientMealPlans from '../pages/patient/PatientMealPlans';
 import PatientProgress from '../pages/patient/PatientProgress';
 import PatientReports from '../pages/patient/PatientReports';
+import UnauthorizedPage from '../pages/UnauthorizedPage';
+import NotFoundPage from '../pages/NotFoundPage';
 
 function RootRedirect() {
   const token = localStorage.getItem('token');
@@ -252,8 +254,9 @@ export default function AppRouter() {
           } 
         />
         
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/" element={<RootRedirect />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

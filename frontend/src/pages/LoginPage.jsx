@@ -33,6 +33,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    if (params.get('unauthorized')) {
+      const from = params.get('from');
+      if (from) {
+        setError(`Access Denied: Unauthorized URL navigation blocked for "${decodeURIComponent(from)}". Please log in with an authorized account.`);
+      } else {
+        setError('Access Denied: Unauthorized URL navigation blocked. Please log in with authorized credentials.');
+      }
+    }
     if (params.get('expired')) {
       setError('Your session has expired. Please log in again.');
     }

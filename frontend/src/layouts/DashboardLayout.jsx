@@ -30,12 +30,18 @@ export default function DashboardLayout({ children, role }) {
     try {
       const parsed = JSON.parse(savedUser);
       if (role && parsed.role !== role) {
-        navigate('/login');
+        navigate('/unauthorized', {
+          state: {
+            attemptedPath: window.location.pathname,
+            allowedRoles: [role],
+            currentRole: parsed.role
+          }
+        });
       } else {
         setUser(parsed);
       }
     } catch {
-      navigate('/login');
+      navigate('/login?unauthorized=true');
     }
   }, [navigate, role]);
 

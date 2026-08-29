@@ -1518,6 +1518,114 @@ flowchart TD
 
 ---
 
+## 🏗️ Class Diagram
+
+```mermaid
+classDiagram
+    class User {
+        +ObjectId _id
+        +String fullName
+        +String email
+        +String password
+        +String role
+        +String status
+        +Date createdAt
+        +comparePassword()
+    }
+
+    class Patient {
+        +ObjectId userId
+        +ObjectId assignedDoctor
+        +String phoneNumber
+        +Number height
+        +Number weight
+        +Number currentBmi
+        +Date dob
+        +String gender
+        +String medicalHistory
+        +Object healthDetails
+    }
+
+    class Doctor {
+        +ObjectId userId
+        +String phoneNumber
+        +String specialisation
+        +String qualification
+    }
+
+    class Assessment {
+        +ObjectId patientId
+        +ObjectId doctorId
+        +Number height
+        +Number weight
+        +Number bmi
+        +Object inputs
+        +Object mealPlanRequirements
+        +String obesityClass
+        +Number confidenceScore
+        +Boolean isApproved
+    }
+
+    class Appointment {
+        +ObjectId patientId
+        +ObjectId doctorId
+        +Date date
+        +String time
+        +String status
+        +String reason
+        +String consultationNote
+    }
+
+    class MealPlan {
+        +ObjectId patientId
+        +ObjectId doctorId
+        +ObjectId assessmentId
+        +String obesityClass
+        +Number dailyCalorieTarget
+        +Array meals
+        +String status
+    }
+
+    class MealTemplate {
+        +String name
+        +String mealType
+        +Number calories
+        +Number protein
+        +Array ingredients
+        +Array dietaryTypes
+        +Array allergens
+        +Array suitableFor
+    }
+
+    class ProgressRecord {
+        +ObjectId patientId
+        +Number bmi
+        +Number weight
+        +String mealAdherence
+        +String physicalActivity
+        +String note
+    }
+
+    class DoctorNote {
+        +ObjectId patientId
+        +ObjectId doctorId
+        +String note
+    }
+
+    User "1" -- "1" Patient : is a
+    User "1" -- "1" Doctor : is a
+    User "1" -- "*" Assessment : makes/receives
+    User "1" -- "*" Appointment : has/attends
+    Assessment "1" -- "1" MealPlan : triggers
+    MealTemplate "*" -- "*" MealPlan : instantiated in
+    Patient "1" -- "*" ProgressRecord : logs
+    Patient "1" -- "*" DoctorNote : receives
+    Doctor "1" -- "*" DoctorNote : writes
+    Doctor "1" -- "*" Patient : assigned to
+```
+
+---
+
 ## 📊 Key Metrics
 
 | Metric | Count |
