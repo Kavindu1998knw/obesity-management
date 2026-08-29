@@ -7,7 +7,6 @@ import {
   Eye,
   FileDown,
   Filter,
-  AlertTriangle,
   X,
   Sparkles,
   Loader2
@@ -390,13 +389,7 @@ export default function PatientAssessments() {
                 </div>
               </div>
 
-              {/* Medical Notice */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  <strong>Clinical Decision Support Notice:</strong> This prediction serves as an automated decision-support aid and should be evaluated alongside professional clinical guidance before undertaking dietary or fitness changes.
-                </p>
-              </div>
+
 
             </div>
           </div>

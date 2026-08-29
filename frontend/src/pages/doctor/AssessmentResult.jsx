@@ -9,7 +9,6 @@ import {
   FileDown,
   Info,
   Loader2,
-  AlertTriangle,
   Activity,
   CheckCircle2,
   Scale,
@@ -308,16 +307,7 @@ export default function AssessmentResult() {
               </ul>
             </div>
 
-            {/* Clinical Disclaimer */}
-            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-5 space-y-2">
-              <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wide flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                Clinical Decision Support Notice
-              </h4>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                This machine learning prediction serves as an automated decision-support aid and should be evaluated alongside professional clinical judgment prior to prescribing dietary or medical interventions.
-              </p>
-            </div>
+
 
           </div>
 
