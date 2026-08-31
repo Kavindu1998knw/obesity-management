@@ -79,7 +79,11 @@ app.get('/', (req, res) => {
 
 if (!process.env.VERCEL) {
   const start = async () => {
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (dbErr) {
+      console.warn('⚠️ Initial MongoDB connection failed. The server will keep running and retry upon incoming requests.');
+    }
     app.listen(PORT, () => {
       console.log(`Server started on port ${PORT}`);
       console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
