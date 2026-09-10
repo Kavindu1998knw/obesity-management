@@ -29,6 +29,20 @@ function getNormalizedMidnight(dateStr) {
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
 }
 
+function calculateAge(dob) {
+  if (!dob) return 'N/A';
+  const birthDate = new Date(dob);
+  if (isNaN(birthDate.getTime())) return 'N/A';
+  const now = new Date();
+  if (birthDate > now) return 'N/A';
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const monthDiff = now.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age < 0 ? 'N/A' : age;
+}
+
 // GET /api/doctor/appointments
 // Get all appointments for the logged in doctor (approved, completed, cancelled)
 export const getMyAppointments = async (req, res) => {
@@ -62,12 +76,16 @@ export const getMyAppointments = async (req, res) => {
         consultationNote: appt.consultationNote,
         followUpRequired: appt.followUpRequired,
         suggestedFollowUpDate: appt.suggestedFollowUpDate,
+        assessmentId: appt.assessmentId || null,
         createdAt: appt.createdAt,
         patient: {
+          id: appt.patientId._id,
           userId: appt.patientId._id,
           patientProfileId: patientProfile ? patientProfile._id : null,
           name: appt.patientId.fullName,
           email: appt.patientId.email,
+          age: patientProfile ? calculateAge(patientProfile.dob) : 'N/A',
+          gender: patientProfile ? patientProfile.gender || 'N/A' : 'N/A'
         }
       });
     }
@@ -83,7 +101,7 @@ export const getMyAppointments = async (req, res) => {
 };
 
 // PUT /api/doctor/appointments/:id/complete
-// Complete an appointment and add consultation notes
+// Complete an appointment with consultation notes and linked assessment
 export const completeAppointment = async (req, res) => {
   try {
     const appointmentId = req.params.id;
@@ -93,7 +111,7 @@ export const completeAppointment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid appointment ID.' });
     }
 
-    const { consultationNote, followUpRequired, suggestedFollowUpDate } = req.body;
+    const { consultationNote, followUpRequired, suggestedFollowUpDate, assessmentId } = req.body;
 
     const appointment = await Appointment.findOne({ _id: appointmentId, doctorId });
 
@@ -107,6 +125,21 @@ export const completeAppointment = async (req, res) => {
 
     if (appointment.status !== 'approved') {
       return res.status(400).json({ success: false, message: 'Only approved appointments can be marked as completed.' });
+    }
+
+    // Check if an assessment is provided or already linked
+    if (assessmentId) {
+      if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+        return res.status(400).json({ success: false, message: 'Invalid assessment ID.' });
+      }
+      appointment.assessmentId = assessmentId;
+    }
+
+    if (!appointment.assessmentId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'A clinical AI assessment is required before completing this appointment. Please use the Start Assessment flow.' 
+      });
     }
 
     if (!consultationNote || consultationNote.trim() === '') {

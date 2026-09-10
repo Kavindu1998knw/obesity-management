@@ -7,7 +7,8 @@ import {
   Activity,
   AlertTriangle,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  CalendarCheck
 } from 'lucide-react';
 
 export default function NewAssessment() {
@@ -15,12 +16,14 @@ export default function NewAssessment() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const initialPatientId = queryParams.get('patient');
+  const initialAppointmentId = queryParams.get('appointment');
 
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // State for Form Fields
   const [patientId, setPatientId] = useState(initialPatientId || '');
+  const [appointmentId, setAppointmentId] = useState(initialAppointmentId || '');
   
   // B. Basic Measurements
   const [Age, setAge] = useState('');
@@ -87,6 +90,15 @@ export default function NewAssessment() {
       const hd = data.healthDetails || {};
       const assessments = data.assessments || [];
       const latestAssessment = assessments.length > 0 ? assessments[0] : null;
+
+      if (profile.id && profile.fullName) {
+        setPatients(prev => {
+          if (!prev.some(p => p._id === profile.id)) {
+            return [{ _id: profile.id, name: profile.fullName }, ...prev];
+          }
+          return prev;
+        });
+      }
 
       if (latestAssessment) {
         setLastAssessmentDate(latestAssessment.createdAt);
@@ -304,6 +316,7 @@ export default function NewAssessment() {
 
       const payload = {
         patientId,
+        appointmentId: appointmentId || undefined,
         Age,
         Gender,
         Height: HeightInMeters,
@@ -329,7 +342,12 @@ export default function NewAssessment() {
       };
 
       const response = await apiClient.post('/doctor/assessments/predict', payload);
-      navigate('/doctor/assessments/preview', { state: { assessmentData: response.data.data } });
+      navigate('/doctor/assessments/preview', { 
+        state: { 
+          assessmentData: response.data.data,
+          appointmentId: appointmentId || null
+        } 
+      });
 
     } catch (err) {
       console.error(err);
@@ -358,7 +376,7 @@ export default function NewAssessment() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link 
-              to="/doctor/assessments" 
+              to={appointmentId ? "/doctor/appointments" : "/doctor/assessments"} 
               className="p-2.5 bg-white rounded-xl border border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-200 transition-colors shadow-2xs"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -369,6 +387,24 @@ export default function NewAssessment() {
             </div>
           </div>
         </div>
+
+        {appointmentId && (
+          <div className="p-4 bg-emerald-50/90 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center justify-between shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
+                <CalendarCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wide text-emerald-950">
+                  Consultation Assessment for Appointment #{appointmentId.slice(-6).toUpperCase()}
+                </h4>
+                <p className="text-[11px] text-emerald-700 mt-0.5">
+                  Conducting this assessment will fulfill the consultation and allow completing the appointment.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-semibold flex items-center gap-2">

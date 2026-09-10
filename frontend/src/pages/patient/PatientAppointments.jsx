@@ -492,8 +492,22 @@ export default function PatientAppointments() {
 
               {selectedAppointment.adminNote && (
                 <div>
-                  <p className="text-[10px] text-teal-700 font-bold uppercase mb-1">Clinical Remarks</p>
+                  <p className="text-[10px] text-teal-700 font-bold uppercase mb-1">Admin Remarks</p>
                   <p className="p-3 bg-teal-50/70 rounded-xl border border-teal-100 text-teal-950 font-medium">{selectedAppointment.adminNote}</p>
+                </div>
+              )}
+
+              {selectedAppointment.consultationNote && (
+                <div>
+                  <p className="text-[10px] text-teal-700 font-bold uppercase mb-1">Doctor Consultation Advice & Notes</p>
+                  <p className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-100 text-emerald-950 font-medium leading-relaxed">{selectedAppointment.consultationNote}</p>
+                </div>
+              )}
+
+              {selectedAppointment.followUpRequired && selectedAppointment.suggestedFollowUpDate && (
+                <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100 text-emerald-900 flex justify-between">
+                  <span className="font-semibold">Suggested Follow-Up Date:</span>
+                  <span className="font-bold">{new Date(selectedAppointment.suggestedFollowUpDate).toLocaleDateString()}</span>
                 </div>
               )}
 

@@ -33,13 +33,19 @@ export default function AssessmentResult() {
   const navigate = useNavigate();
 
   const isPreview = id === 'preview';
+  const passedAppointmentId = location.state?.appointmentId || null;
+  const initialSuccessMessage = location.state?.successMessage || null;
   
   const [assessment, setAssessment] = useState(null);
   const [patient, setPatient] = useState(null);
+  const [appointmentId, setAppointmentId] = useState(passedAppointmentId);
+  const [followUpRequired, setFollowUpRequired] = useState(false);
+  const [suggestedFollowUpDate, setSuggestedFollowUpDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(initialSuccessMessage);
   const [doctorNote, setDoctorNote] = useState('');
 
   useEffect(() => {
@@ -50,6 +56,9 @@ export default function AssessmentResult() {
       }
       const data = location.state.assessmentData;
       setAssessment(data);
+      if (location.state?.appointmentId) {
+        setAppointmentId(location.state.appointmentId);
+      }
       
       apiClient.get('/doctor/patients')
         .then(res => {
@@ -67,6 +76,9 @@ export default function AssessmentResult() {
       setLoading(true);
       const response = await apiClient.get(`/doctor/assessments/${id}`);
       setAssessment(response.data.data);
+      if (response.data.data?.appointmentId) {
+        setAppointmentId(response.data.data.appointmentId);
+      }
     } catch {
       setError('Failed to load assessment details.');
     } finally {
@@ -85,11 +97,16 @@ export default function AssessmentResult() {
         bmi: assessment.bmi,
         mealPlanRequirements: assessment.mealPlanRequirements,
         prediction: assessment.prediction,
-        doctorNote
+        doctorNote,
+        appointmentId: appointmentId || undefined,
+        followUpRequired,
+        suggestedFollowUpDate: followUpRequired ? suggestedFollowUpDate : undefined
       };
       
       const response = await apiClient.post('/doctor/assessments/save', payload);
-      navigate(`/doctor/assessments/${response.data.data._id}`);
+      navigate(`/doctor/assessments/${response.data.data._id}`, {
+        state: { successMessage: response.data.message }
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save assessment.');
       setSaving(false);
@@ -141,23 +158,42 @@ export default function AssessmentResult() {
     <DashboardLayout role="doctor">
       <div className="space-y-6 pb-12">
         
+        {/* Success Alert Banner */}
+        {successMsg && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center justify-between shadow-2xs">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-emerald-950">{successMsg}</p>
+                <p className="text-[11px] text-emerald-700 mt-0.5">The patient's clinical records and appointment status have been updated.</p>
+              </div>
+            </div>
+            <button onClick={() => setSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-950 text-xs font-bold px-2 py-1">✕</button>
+          </div>
+        )}
+
         {/* Header Banner */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <Link 
-              to={isPreview ? "/doctor/assessments/new" : "/doctor/assessments"} 
+              to={isPreview ? (appointmentId ? `/doctor/assessments/new?patient=${assessment?.patientId}&appointment=${appointmentId}` : "/doctor/assessments/new") : "/doctor/assessments"} 
               className="p-2.5 bg-white rounded-xl border border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-200 transition-colors shadow-2xs"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                   {isPreview ? 'Prediction Preview' : 'Assessment Result'}
                 </h1>
                 {assessment._id && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-semibold uppercase">
                     #{assessment._id.slice(-6).toUpperCase()}
+                  </span>
+                )}
+                {appointmentId && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Appt #{typeof appointmentId === 'string' ? appointmentId.slice(-6).toUpperCase() : appointmentId._id ? appointmentId._id.slice(-6).toUpperCase() : 'CONSULTATION'}
                   </span>
                 )}
               </div>
@@ -234,26 +270,68 @@ export default function AssessmentResult() {
             {isPreview && (
               <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
                 <div className="border-b border-slate-100 pb-2">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Doctor Observations & Recommendations</h3>
-                  <p className="text-[11px] text-slate-500">Attach clinical remarks prior to committing prediction to patient records.</p>
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    {appointmentId ? 'Doctor Consultation Notes & Session Completion' : 'Doctor Observations & Recommendations'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {appointmentId 
+                      ? 'Record clinical remarks and consultation guidance to complete this appointment session.' 
+                      : 'Attach clinical remarks prior to committing prediction to patient records.'}
+                  </p>
                 </div>
 
-                <textarea 
-                  rows={3}
-                  value={doctorNote}
-                  onChange={(e) => setDoctorNote(e.target.value)}
-                  placeholder="Record diagnosis insights, clinical verification notes, or targeted calorie suggestions..."
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none placeholder:text-slate-400"
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Consultation Notes / Medical Advice <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea 
+                    rows={3}
+                    value={doctorNote}
+                    onChange={(e) => setDoctorNote(e.target.value)}
+                    placeholder="Record diagnosis insights, clinical verification notes, or targeted calorie suggestions..."
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 outline-none placeholder:text-slate-400"
+                    required={Boolean(appointmentId)}
+                  />
+                </div>
+
+                {appointmentId && (
+                  <div className="space-y-3 pt-1 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="followUpRequired"
+                        checked={followUpRequired}
+                        onChange={(e) => setFollowUpRequired(e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                      />
+                      <label htmlFor="followUpRequired" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                        Follow-up Session Required?
+                      </label>
+                    </div>
+
+                    {followUpRequired && (
+                      <div className="max-w-xs">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Suggested Follow-up Date</label>
+                        <input
+                          type="date"
+                          value={suggestedFollowUpDate}
+                          onChange={(e) => setSuggestedFollowUpDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
                 
-                <div className="flex justify-end pt-1">
+                <div className="flex justify-end pt-1 gap-2">
                   <button 
                     onClick={handleSave}
                     disabled={saving}
                     className="inline-flex items-center gap-2 px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    <span>Save & Record Assessment</span>
+                    <span>{appointmentId ? 'Save & Complete Consultation' : 'Save & Record Assessment'}</span>
                   </button>
                 </div>
               </div>

@@ -236,7 +236,7 @@ export const getPatientDetails = async (req, res) => {
     ));
 
     const upcomingAppointments = await Appointment.find({
-      patientId: patientUserId,
+      patientId: actualPatientUserId,
       doctorId: doctorId,
       status: 'approved',
       date: { $gte: todayMidnight }
@@ -245,13 +245,13 @@ export const getPatientDetails = async (req, res) => {
     const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
 
     // Assessments – all historical for clinical continuity
-    const assessments = await Assessment.find({ patientId: patientUserId })
+    const assessments = await Assessment.find({ patientId: actualPatientUserId })
       .populate('doctorId', 'fullName')
       .sort({ createdAt: -1 });
 
     // Meal Plans – Approved from any doctor, Draft only from this doctor
     const mealPlans = await MealPlan.find({
-      patientId: patientUserId,
+      patientId: actualPatientUserId,
       $or: [
         { status: 'Approved' },
         { status: 'Draft', doctorId: doctorId }
@@ -259,20 +259,37 @@ export const getPatientDetails = async (req, res) => {
     }).sort({ createdAt: -1 });
 
     // Progress Records
-    const progressRecords = await ProgressRecord.find({ patientId: patientUserId })
+    const progressRecords = await ProgressRecord.find({ patientId: actualPatientUserId })
       .sort({ date: -1 });
 
     // Doctor Notes – all for clinical continuity (with author name)
-    const notes = await DoctorNote.find({ patientId: patientUserId })
+    const notes = await DoctorNote.find({ patientId: actualPatientUserId })
       .populate('doctorId', 'fullName')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
       data: {
+        patient: {
+          _id: patient.userId._id,
+          id: patient.userId._id,
+          name: patient.userId.fullName,
+          fullName: patient.userId.fullName,
+          email: patient.userId.email,
+          accountStatus: patient.userId.status,
+          phoneNumber: patient.phoneNumber,
+          dob: patient.dob,
+          age: calculateAge(patient.dob),
+          gender: patient.gender,
+          height: patient.height,
+          weight: patient.weight,
+          currentBmi: patient.currentBmi
+        },
         profile: {
           id: patient.userId._id,
+          _id: patient.userId._id,
           fullName: patient.userId.fullName,
+          name: patient.userId.fullName,
           email: patient.userId.email,
           accountStatus: patient.userId.status,
           phoneNumber: patient.phoneNumber,
@@ -287,10 +304,20 @@ export const getPatientDetails = async (req, res) => {
           nextAppointmentDate: nextAppointment ? nextAppointment.date : null,
           nextAppointmentTime: nextAppointment ? nextAppointment.time : null
         },
+        overview: {
+          assignedDoctor: patient.assignedDoctor ? { _id: patient.assignedDoctor._id, fullName: patient.assignedDoctor.fullName } : null,
+          currentBmi: patient.currentBmi,
+          height: patient.height,
+          weight: patient.weight,
+          latestObesityClass: assessments.length > 0 ? assessments[0].obesityClass : 'Not Assessed',
+          nextAppointment
+        },
         healthDetails: patient.healthDetails || {},
         assessments,
         mealPlans,
+        mealPlan: mealPlans.length > 0 ? mealPlans[0] : null,
         progressRecords,
+        progress: progressRecords,
         notes
       }
     });

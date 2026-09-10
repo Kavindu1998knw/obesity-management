@@ -74,7 +74,8 @@ export const predictObesity = async (req, res) => {
       FAF,
       TUE,
       MTRANS,
-      mealPlanRequirements // Not sent to ML, just passed through
+      mealPlanRequirements, // Not sent to ML, just passed through
+      appointmentId
     } = req.body;
 
     // Validate required fields
@@ -192,6 +193,7 @@ export const predictObesity = async (req, res) => {
       data: {
         inputs: mlPayload,
         patientId,
+        appointmentId: appointmentId || null,
         bmi,
         height: Height,
         weight: Weight,
@@ -222,7 +224,10 @@ export const saveAssessment = async (req, res) => {
       height,
       weight,
       mealPlanRequirements,
-      doctorNote
+      doctorNote,
+      appointmentId,
+      followUpRequired,
+      suggestedFollowUpDate
     } = req.body;
 
     if (!patientId || !inputs || !height || !weight) {
@@ -247,6 +252,19 @@ export const saveAssessment = async (req, res) => {
 
     if (!isAssigned && !hasAppointment) {
       return res.status(403).json({ success: false, message: 'Patient not assigned to you or no approved appointment exists.' });
+    }
+
+    // If appointmentId provided, verify it
+    let targetAppointment = null;
+    if (appointmentId) {
+      targetAppointment = await Appointment.findOne({
+        _id: appointmentId,
+        doctorId,
+        patientId: actualPatientUserId
+      });
+      if (!targetAppointment) {
+        return res.status(404).json({ success: false, message: 'Linked appointment not found or not assigned to you.' });
+      }
     }
 
     // Server-side BMI calculation (height in metres)
@@ -310,6 +328,7 @@ export const saveAssessment = async (req, res) => {
     const newAssessment = new Assessment({
       patientId: actualPatientUserId,
       doctorId,
+      appointmentId: targetAppointment ? targetAppointment._id : undefined,
       height: h,
       weight: w,
       bmi,
@@ -323,6 +342,18 @@ export const saveAssessment = async (req, res) => {
     });
 
     await newAssessment.save();
+
+    // If an appointment was linked, mark it completed and record the notes
+    if (targetAppointment) {
+      targetAppointment.status = 'completed';
+      targetAppointment.consultationNote = doctorNote ? doctorNote.trim() : 'AI Obesity Assessment conducted and recorded.';
+      targetAppointment.assessmentId = newAssessment._id;
+      targetAppointment.followUpRequired = Boolean(followUpRequired);
+      if (targetAppointment.followUpRequired && suggestedFollowUpDate) {
+        targetAppointment.suggestedFollowUpDate = new Date(suggestedFollowUpDate);
+      }
+      await targetAppointment.save();
+    }
 
     // Update the Patient's profile with latest BMI, height, weight
     patientProfile.currentBmi = bmi;
@@ -363,8 +394,11 @@ export const saveAssessment = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Assessment saved successfully.',
-      data: newAssessment
+      message: targetAppointment 
+        ? 'Assessment saved and appointment consultation completed successfully.' 
+        : 'Assessment saved successfully.',
+      data: newAssessment,
+      appointmentUpdated: Boolean(targetAppointment)
     });
   } catch (error) {
     console.error('Error saving assessment:', error);

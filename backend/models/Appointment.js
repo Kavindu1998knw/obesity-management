@@ -65,6 +65,10 @@ const AppointmentSchema = new mongoose.Schema({
   },
   suggestedFollowUpDate: {
     type: Date
+  },
+  assessmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Assessment'
   }
 }, { timestamps: true });
 

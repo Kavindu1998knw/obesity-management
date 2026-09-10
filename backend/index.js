@@ -4,9 +4,11 @@ import dotenv from 'dotenv';
 import dns from 'dns';
 
 // Ensure MongoDB Atlas SRV lookup resolves reliably across all ISPs and mobile hotspots
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-} catch (e) {}
+if (dns.setDefaultResultOrder) {
+  try {
+    dns.setDefaultResultOrder('ipv4first');
+  } catch (e) {}
+}
 
 import connectDB from './config/dbConnection.js';
 import authRoutes from './routes/authRoutes.js';
@@ -82,7 +84,7 @@ if (!process.env.VERCEL) {
     try {
       await connectDB();
     } catch (dbErr) {
-      console.warn('⚠️ Initial MongoDB connection failed. The server will keep running and retry upon incoming requests.');
+      // Handled in connectDB
     }
     app.listen(PORT, () => {
       console.log(`Server started on port ${PORT}`);

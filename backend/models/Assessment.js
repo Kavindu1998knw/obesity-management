@@ -57,6 +57,10 @@ const AssessmentSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  appointmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Appointment'
+  },
   isApproved: {
     type: Boolean,
     default: false
