@@ -758,7 +758,7 @@ export default function NewAssessment() {
               className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
             >
               {predicting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-              <span>{predicting ? 'Processing AI Model...' : 'Run Random Forest Prediction'}</span>
+              <span>{predicting ? 'Processing AI Model...' : 'Run Prediction'}</span>
             </button>
           </div>
         </form>

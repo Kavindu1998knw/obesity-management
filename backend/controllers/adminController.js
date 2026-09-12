@@ -839,7 +839,8 @@ export const updateAppointmentStatus = async (req, res) => {
     // Allowed transitions
     const allowed = {
       pending: ['approved', 'rejected', 'cancelled'],
-      approved: ['cancelled']
+      approved: ['cancelled'],
+      pending_patient_confirmation: ['cancelled']
     };
 
     if (!allowed[appointment.status]?.includes(status)) {
@@ -887,7 +888,7 @@ export const updateAppointmentStatus = async (req, res) => {
         doctorId: appointment.doctorId,
         date: appointment.date,
         time: appointment.time,
-        status: 'approved'
+        status: { $in: ['approved', 'pending_patient_confirmation'] }
       });
       if (doctorConflict) {
         return res.status(409).json({ success: false, message: 'Doctor already has an approved appointment at this date and time.' });
@@ -899,7 +900,7 @@ export const updateAppointmentStatus = async (req, res) => {
         patientId: appointment.patientId,
         date: appointment.date,
         time: appointment.time,
-        status: { $in: ['pending', 'approved'] }
+        status: { $in: ['pending', 'approved', 'pending_patient_confirmation'] }
       });
       if (patientConflict) {
         return res.status(409).json({ success: false, message: 'Patient already has a pending or approved appointment at this date and time.' });
@@ -968,7 +969,7 @@ export const rescheduleAppointment = async (req, res) => {
     }
 
     // Only pending or approved can be rescheduled
-    if (!['pending', 'approved'].includes(appointment.status)) {
+    if (!['pending', 'approved', 'pending_patient_confirmation'].includes(appointment.status)) {
       return res.status(400).json({ success: false, message: `Cannot reschedule a ${appointment.status} appointment.` });
     }
 
@@ -999,7 +1000,7 @@ export const rescheduleAppointment = async (req, res) => {
       doctorId: doctorId,
       date: requestedDate,
       time: time,
-      status: 'approved'
+      status: { $in: ['approved', 'pending_patient_confirmation'] }
     });
     if (doctorConflict) {
       return res.status(409).json({ success: false, message: 'Doctor already has an approved appointment at this date and time.' });
@@ -1011,7 +1012,7 @@ export const rescheduleAppointment = async (req, res) => {
       patientId: appointment.patientId,
       date: requestedDate,
       time: time,
-      status: { $in: ['pending', 'approved'] }
+      status: { $in: ['pending', 'approved', 'pending_patient_confirmation'] }
     });
     if (patientConflict) {
       return res.status(409).json({ success: false, message: 'Patient already has a pending or approved appointment at this date and time.' });
@@ -1021,7 +1022,7 @@ export const rescheduleAppointment = async (req, res) => {
     appointment.time = time;
     appointment.doctorId = doctorId;
     appointment.rescheduleNote = rescheduleNote.trim();
-    appointment.status = 'approved';
+    appointment.status = 'pending_patient_confirmation';
     // Clear obsolete rejection/cancellation data
     appointment.rejectionReason = undefined;
     appointment.cancellationReason = undefined;

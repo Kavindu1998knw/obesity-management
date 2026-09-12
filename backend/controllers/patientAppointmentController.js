@@ -144,7 +144,7 @@ export const requestAppointment = async (req, res) => {
       patientId,
       date: requestedDate,
       time,
-      status: { $in: ['pending', 'approved'] }
+      status: { $in: ['pending', 'approved', 'pending_patient_confirmation'] }
     });
 
     if (duplicate) {
@@ -212,6 +212,65 @@ export const cancelAppointment = async (req, res) => {
     res.status(200).json({ success: true, data: appointment });
   } catch (error) {
     console.error('Error cancelling appointment:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// Accept Rescheduled Appointment
+export const acceptReschedule = async (req, res) => {
+  try {
+    const patientId = req.user._id;
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid appointment ID.' });
+    }
+
+    const appointment = await Appointment.findOne({ _id: id, patientId });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found.' });
+    }
+
+    if (appointment.status !== 'pending_patient_confirmation') {
+      return res.status(400).json({ success: false, message: 'Appointment is not pending confirmation.' });
+    }
+
+    appointment.status = 'approved';
+    await appointment.save();
+
+    res.status(200).json({ success: true, message: 'Rescheduled appointment accepted.', data: appointment });
+  } catch (error) {
+    console.error('Error accepting reschedule:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// Decline Rescheduled Appointment
+export const declineReschedule = async (req, res) => {
+  try {
+    const patientId = req.user._id;
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid appointment ID.' });
+    }
+
+    const appointment = await Appointment.findOne({ _id: id, patientId });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found.' });
+    }
+
+    if (appointment.status !== 'pending_patient_confirmation') {
+      return res.status(400).json({ success: false, message: 'Appointment is not pending confirmation.' });
+    }
+
+    appointment.status = 'cancelled';
+    appointment.cancellationReason = 'Patient declined rescheduled time.';
+    await appointment.save();
+
+    res.status(200).json({ success: true, message: 'Rescheduled appointment declined.', data: appointment });
+  } catch (error) {
+    console.error('Error declining reschedule:', error);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };

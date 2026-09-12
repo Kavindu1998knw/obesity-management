@@ -111,6 +111,7 @@ export default function AppointmentList() {
                 className="px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-xs bg-white text-slate-700 font-medium cursor-pointer"
               >
                 <option value="All">All Statuses</option>
+                <option value="pending_patient_confirmation">Awaiting Patient</option>
                 <option value="approved">Approved</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
@@ -184,9 +185,11 @@ export default function AppointmentList() {
                             ? 'bg-sky-50 text-sky-700 border-sky-200' 
                             : appt.status === 'approved'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : appt.status === 'pending_patient_confirmation'
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
                             : 'bg-rose-50 text-rose-700 border-rose-200'
                         }`}>
-                          {appt.status}
+                          {appt.status === 'pending_patient_confirmation' ? 'Awaiting Patient' : appt.status}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-right">
@@ -275,7 +278,14 @@ export default function AppointmentList() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Status:</span>
-                  <span className={`font-bold capitalize ${viewModalData.status === 'completed' ? 'text-teal-700' : viewModalData.status === 'approved' ? 'text-emerald-700' : 'text-slate-700'}`}>{viewModalData.status}</span>
+                  <span className={`font-bold capitalize ${
+                    viewModalData.status === 'completed' ? 'text-teal-700' : 
+                    viewModalData.status === 'approved' ? 'text-emerald-700' : 
+                    viewModalData.status === 'pending_patient_confirmation' ? 'text-orange-700' : 
+                    'text-slate-700'
+                  }`}>
+                    {viewModalData.status === 'pending_patient_confirmation' ? 'Awaiting Patient' : viewModalData.status}
+                  </span>
                 </div>
               </div>
 

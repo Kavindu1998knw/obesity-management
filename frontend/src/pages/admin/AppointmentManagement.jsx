@@ -155,12 +155,17 @@ export default function AppointmentManagement() {
   const getStatusBadge = (status) => {
     const styles = {
       pending: 'bg-amber-50 text-amber-700 border-amber-200',
+      pending_patient_confirmation: 'bg-orange-50 text-orange-700 border-orange-200',
       approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       completed: 'bg-sky-50 text-sky-700 border-sky-200',
       rejected: 'bg-rose-50 text-rose-700 border-rose-200',
       cancelled: 'bg-slate-100 text-slate-700 border-slate-200'
     };
-    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border capitalize ${styles[status] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{status}</span>;
+    
+    let displayStatus = status;
+    if (status === 'pending_patient_confirmation') displayStatus = 'Awaiting Patient';
+    
+    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border capitalize ${styles[status] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{displayStatus}</span>;
   };
 
   return (
@@ -216,6 +221,7 @@ export default function AppointmentManagement() {
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
+                <option value="pending_patient_confirmation">Awaiting Patient</option>
                 <option value="approved">Approved</option>
                 <option value="completed">Completed</option>
                 <option value="rejected">Rejected</option>
@@ -334,7 +340,7 @@ export default function AppointmentManagement() {
                             </>
                           )}
 
-                          {(app.status === 'pending' || app.status === 'approved') && (
+                          {(app.status === 'pending' || app.status === 'approved' || app.status === 'pending_patient_confirmation') && (
                             <>
                               <button 
                                 onClick={() => openReschedule(app)} 

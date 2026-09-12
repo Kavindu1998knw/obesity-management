@@ -10,7 +10,9 @@ import {
   Loader2,
   X,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Check,
+  XCircle
 } from 'lucide-react';
 
 export default function PatientAppointments() {
@@ -126,6 +128,26 @@ export default function PatientAppointments() {
     }
   };
 
+  const handleAcceptReschedule = async (appt) => {
+    if (!window.confirm('Are you sure you want to accept this rescheduled time?')) return;
+    try {
+      await apiClient.put(`/patient/appointments/${appt._id}/accept-reschedule`);
+      fetchAppointments();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to accept reschedule.');
+    }
+  };
+
+  const handleDeclineReschedule = async (appt) => {
+    if (!window.confirm('Are you sure you want to decline this rescheduled time? The appointment will be cancelled.')) return;
+    try {
+      await apiClient.put(`/patient/appointments/${appt._id}/decline-reschedule`);
+      fetchAppointments();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to decline reschedule.');
+    }
+  };
+
   const openViewModal = (appt) => {
     setSelectedAppointment(appt);
     setShowViewModal(true);
@@ -149,6 +171,8 @@ export default function PatientAppointments() {
     switch(status) {
       case 'pending': 
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending</span>;
+      case 'pending_patient_confirmation': 
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">Action Required</span>;
       case 'approved': 
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Approved</span>;
       case 'completed': 
@@ -215,6 +239,7 @@ export default function PatientAppointments() {
               >
                 <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
+                <option value="pending_patient_confirmation">Action Required</option>
                 <option value="approved">Approved</option>
                 <option value="completed">Completed</option>
                 <option value="rejected">Rejected</option>
@@ -308,6 +333,24 @@ export default function PatientAppointments() {
                             >
                               <Ban className="w-4 h-4" />
                             </button>
+                          )}
+                          {appt.status === 'pending_patient_confirmation' && (
+                            <>
+                              <button 
+                                onClick={() => handleAcceptReschedule(appt)}
+                                className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                title="Accept Rescheduled Time"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeclineReschedule(appt)}
+                                className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Decline & Cancel"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
